@@ -1,21 +1,40 @@
 <?xml version="1.0"?>
-<overlay id="sample"
-xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
- <script type="application/javascript" src="chrome://caldavcalendar/content/calendartab.js"/><!-- A reference to your JavaScript file -->
- <!--
- <statusbar id="status-bar">
-  <statusbarpanel id="my-panel" label="Date"/>
-</statusbar>-->
-
-   <tabs id="tabcontainer">
-     <tab id="calendertab-view" label="Calendar" validate="never" type="calendar" maxwidth="250" width="0" minwidth="100" flex="100" class="tabmail-tab"/>
-   </tabs>
-
+<overlay id="caldavcalendar-overlay-panel" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/javascript" src="chrome://caldavcalendar/content/calendartab.js"/>
 <!--
   <toolbar id="tabbar-toolbar">
-   <tabs>
-     <tab id="calendertab-view" label="Calendar?"/>
-   </tabs>
-   </toolbar>
- -->
+    <toolbarbutton id="caldav-calendar-open">
+  </toolbar>
+-->
+
+  <tabpanels id="tabpanelcontainer">
+    <vbox id="calendarTabPanel" flex="1">
+      <modevbox id="calendar-toolbox-container" mode="calendar">
+        <toolbox class="mail-toolbox">
+          <toolbar class="inline-toolbar chromeclass-toolbar" mode="full" fullscreentoolbar="true">
+            <toolbarbutton type="menu-button" label="Open" class="toolbarbutton-1">
+              <menupopup>
+                <menuitem label="Open Changed Files"/>
+                <menuitem label="Open All"/>
+              </menupopup>
+            </toolbarbutton>
+          </toolbar>
+        </toolbox>
+      </modevbox>
+      <notificationbox>
+        <notification label="This is a warning"/>
+      </notificationbox>
+      <hbox id="calendarContent" flex="1">
+        <datepicker type="grid"/>
+        <!--<datepicker type="popup" value="2008/08/24"/>-->
+        <splitter/>
+        <box flex="1">test</box>
+        <splitter/>
+        <colorpicker/>
+      </hbox>
+
+    </vbox>
+  </tabpanels>
+
+
 </overlay>
