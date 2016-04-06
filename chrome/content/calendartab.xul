@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<overlay id="sample"
+xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ <script type="application/javascript" src="chrome://caldavcalendar/content/calendartab.js"/><!-- A reference to your JavaScript file -->
+ <!--
+ <statusbar id="status-bar">
+  <statusbarpanel id="my-panel" label="Date"/>
+</statusbar>-->
+
+   <tabs id="tabcontainer">
+     <tab id="calendertab-view" label="Calendar" validate="never" type="calendar" maxwidth="250" width="0" minwidth="100" flex="100" class="tabmail-tab"/>
+   </tabs>
+
+<!--
+  <toolbar id="tabbar-toolbar">
+   <tabs>
+     <tab id="calendertab-view" label="Calendar?"/>
+   </tabs>
+   </toolbar>
+ -->
+</overlay>

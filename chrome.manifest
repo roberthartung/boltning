@@ -1,0 +1,4 @@
+# Content directory
+content caldavcalendar chrome/content/
+# Add general overlay
+overlay chrome://messenger/content/messenger.xul chrome://caldavcalendar/content/calendartab.xul
