@@ -1,7 +1,16 @@
 # Content directory
 content caldavcalendar chrome/content/
+
+# Category
+component {B9F1A53C-C865-4203-97D9-455E4251FD3C} components/caldavProtocolService.js
+contract @mozilla.org/network/protocol;1?name=caldav {B9F1A53C-C865-4203-97D9-455E4251FD3C}
+#category protocol caldav
+# @caldavcalendar/caldavcalendar.proto.caldav;1
+
 # Calendar Tab
 overlay chrome://messenger/content/messenger.xul chrome://caldavcalendar/content/calendartab.xul
 
 #overlay chrome://messenger/content/mailWindowOverlay.xul chrome://caldavcalendar/content/wizard.xul
 #overlay chrome://messenger/content/messenger.xul chrome://caldavcalendar/content/dialog.xul
+
+overlay chrome://messenger/content/AccountManager.xul chrome://caldavcalendar/content/AccountManagerOverlay.xul

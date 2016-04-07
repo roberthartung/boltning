@@ -1,19 +1,15 @@
-/*var calendarTabType = {
-  name: "calendar",
-  panelId: "calendarTabPanel",
-  modes: {
-     calendar: {
-       type: "calendar",
-       openTab: function(aTab, aArgs) {
-         throw "openTab";
-       },
-       showTab: function(aTab) {
-         throw "showTab";
-       }
-     }
-   }
-}
-*/
+// Imports the Services module, that allows us to use Services.<service> to use
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Log.jsm");
+
+let log = Log.repository.getLogger("caldavcalendar.calendartab");
+log.level = Log.Level.Debug;
+log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
+
+
+//log.debug("Details about bad thing only useful during debugging", {someInfo: "nothing"});
+
+var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1", Ci.nsILoginInfo, "init");
 
 var calendarTabMonitor = {
   monitorName: "caldavcalendar",
@@ -96,12 +92,64 @@ window.addEventListener("load", function(e) {
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
 
-  //document.getElementById("modeBroadcaster").setAttribute("mode", 'mail');
-  //document.getElementById("modeBroadcaster").setAttribute("checked", "true");
 
-  // document.getElementById("modeBroadcaster").setAttribute("mode", gCurrentMode);
   tabmail.openTab("caldavcalendar", {background: true});
 
+  /// TODO(rh): Start thread via Services.tm
+  /// https://developer.mozilla.org/en-US/docs/The_Thread_Manager
+  var syncThread = Services.tm.newThread(0);
+  /// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIRunnable
+
+  //var myLoginManager = Components.classes["@mozilla.org/login-manager;1"].getService(Components.interfaces.nsILoginManager);
+
+  /*
+
+  var logins = myLoginManager.getAllLogins({});
+  if(logins.length == 0) {
+    aConsoleService.logStringMessage("No accounts found :(");
+    //var loginInfo = new nsLoginInfo(hostname, formSubmitURL, httprealm, username, password, usernameField, passwordField);
+    var loginInfo = new nsLoginInfo('chrome://caldavcalendar', null, 'CalDAV Calendar', 'hartung', '123456', '', ''); // PW?
+    myLoginManager.addLogin(loginInfo);
+  } else {
+    // Simple Array[nsLoginInfo]
+    //aConsoleService.logStringMessage("Accounts found? :)"+JSON.stringify(logins));
+  }
+  */
+
+
+  //Services.core.init();
+  var interval;
+  interval = window.setInterval(function() {
+    if(Services.core.initialized) {
+      window.clearInterval(interval);
+
+      //var categoryManager = Components.classes["@mozilla.org/categorymanager;1"].getService(Components.interfaces.nsICategoryManager);
+      //categoryManager.addCategoryEnty("protocol", "caldav", "caldavcalendar.proto.caldav", false /*must be false*/, true);
+
+      /*
+      log.debug("Core initialized");
+      try {
+        var x = Services.core.getProtocolById("caldav");
+        log.debug(x);
+        var y = Services.core.getProtocols();
+        log.debug(y);
+      } catch(err) {
+        log.error(err);
+      }
+      log.debug("done");
+      */
+      //var proto = Components.classes[cid].createInstance(Ci.prplIProtocol);
+      //log.debug(proto);
+      //log.info(Services.core.getProtocols()); // ('caldav')
+      //log.debug(Services.accounts);
+      log.debug(Services.logins.getAllLogins({}));
+    }
+  }, 100);
+  //
+
+  //Services.accounts.createAccount("someuser", "someid");
+
+
   // openDialog('chrome://caldavcalendar/content/dialog.xul');
-  openDialog('chrome://caldavcalendar/content/wizard.xul');
+  // openDialog('chrome://caldavcalendar/content/wizard.xul');
 }, false);
