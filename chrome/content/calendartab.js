@@ -37,7 +37,7 @@ var calendarTabType = {
       type: "caldavcalendar",
       // Optional function
       shouldSwitchTo: function(aArgs) {
-        // throw "shouldSwitchTo";
+        log.debug("shouldSwitchTo");
         //return true;
       },
       openTab: function(aTab, aArgs) {
@@ -54,22 +54,28 @@ var calendarTabType = {
       },
       closeTab: function(aTab) {
         // cleanup
-        //throw "closeTab";
+        log.debug("closeTab");
       },
       saveTabState: function(aTab) {
-        //throw "saveTabState";
+        log.debug("saveTabState");
       },
       showTab: function(aTab) {
-        //throw "showTab";
+        log.debug("showTab", Services.logins.countLogins("", "", "CalDAV Calendar"));
+        var check = {value: false};                  // default the checkbox to false
+        var password = {value: "pass"};
+        var result = Services.prompt.promptPassword(null, "Title", "Enter password:", password, "Save password in password manager?", check);
+        if(result) {
+          log.debug('password entered', check, password);
+        }
       },
       persistTab: function(aTab) {
-        //throw "persistTab";
+        log.debug("persistTab");
       },
       restoreTab: function(aTabmail, aPersistedState) {
-        //throw "restoreTab";
+        log.debug("restoreTab");
       },
       onTitleChanged: function(aTab) {
-        //throw "onTitleChanged";
+        log.debug("onTitleChanged");
       },
       supportsCommand: function(aCommand, aTab) { return false; },
       isCommandEnabled: function(aCommand, aTab) { return false; },
@@ -77,13 +83,13 @@ var calendarTabType = {
 
       },
       onEvent: function(aEvent, aTab) {
-        //throw "onEvent";
+        log.debug("onEvent");
       },
       //getBrowser(aTab)
     }
   },
   saveTabState: function(aTab) {
-    //throw "saveTabState";
+    log.debug("saveTabState");
   }
 };
 
@@ -91,8 +97,6 @@ window.addEventListener("load", function(e) {
   let tabmail = document.getElementById('tabmail');
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
-
-
   tabmail.openTab("caldavcalendar", {background: true});
 
   /// TODO(rh): Start thread via Services.tm
