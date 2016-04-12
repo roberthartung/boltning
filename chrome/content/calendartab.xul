@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<overlay id="caldavcalendar-overlay-panel" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<overlay id="caldavcalendar-overlay-panel" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:html="http://www.w3.org/1999/xhtml">
   <script type="application/javascript" src="chrome://caldavcalendar/content/calendartab.js"/>
 <!--
   <toolbar id="tabbar-toolbar">
@@ -25,10 +25,80 @@
         <notification label="This is a warning"/>
       </notificationbox>
       <hbox id="calendarContent" flex="1">
-        <datepicker type="grid"/>
+        <vbox>
+          <datepicker type="grid"/>
+          <tree id="calendar-tree" hidecolumnpicker="true" flex="1">
+            <treecols>
+              <treecol label="Calendar" flex="1" id="name" />
+            </treecols>
+
+            <treechildren id="calendar-tree-children"/>
+          </tree>
+        </vbox>
         <!--<datepicker type="popup" value="2008/08/24"/>-->
         <splitter/>
-        <box flex="1">test</box>
+        <grid flex="5">
+          <columns>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+          </columns>
+          <rows>
+            <row>
+              <label value="Monday"/>
+              <label value="Tuesday"/>
+              <label value="Wednesday"/>
+              <label value="Thursday"/>
+              <label value="Friday"/>
+            </row>
+            <row>
+              All Day Events
+            </row>
+            <row>
+              <stack id="calendar-monday"/>
+              <stack id="calendar-tuesday"/>
+              <stack id="calendar-wednesday"/>
+              <stack id="calendar-thursday"/>
+              <stack id="calendar-friday"/>
+            </row>
+          </rows>
+        </grid>
+        <!--
+        <hbox flex="1">
+          <vbox flex="1">
+            <label value="Monday"/>
+            <stack flex="1" id="calendar-monday">
+
+            </stack>
+          </vbox>
+          <vbox flex="1">
+            <label value="Tuesday"/>
+            <stack flex="1" id="calendar-tuesday">
+
+            </stack>
+          </vbox>
+          <vbox flex="1">
+            <label value="Wednesday"/>
+            <stack flex="1" id="calendar-wednesday">
+
+            </stack>
+          </vbox>
+          <vbox flex="1">
+            <label value="Thursday"/>
+            <stack flex="1" id="calendar-thursday">
+
+            </stack>
+          </vbox>
+          <vbox flex="1">
+            <label value="Friday"/>
+            <stack flex="1" id="calendar-friday">
+
+            </stack>
+          </vbox>
+        </hbox>
+      -->
         <splitter/>
         <colorpicker/>
       </hbox>

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<wizard id="theWizard" title="Add new CalDAV Account" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" onwizardfinish="CreateAccount();" onwizardcancel="Cleanup();">
+  <script type="application/javascript" src="chrome://caldavcalendar/content/AddAccount.js"></script>
+
+  <wizardpage label="Label 1" description="Description 1">
+    <vbox flex="1">
+      <label value="Enter an account name" placeholder="Personal calendar"/>
+      <textbox id="accountname"/>
+
+      <label value="Enter the CalDav calendar URL" placeholder="https://cal.server.com"/>
+      <textbox id="serverurl"/>
+    </vbox>
+  </wizardpage>
+
+  <wizardpage label="Label 2" description="Credentials">
+    <vbox flex="1">
+      <label value="Enter your username"/>
+      <textbox id="username"/>
+
+      <label value="Enter your password"/>
+      <textbox id="userpassword" type="password"/>
+    </vbox>
+  </wizardpage>
+
+  <wizardpage label="Label 3" description="Description 3">
+
+  </wizardpage>
+</wizard>
