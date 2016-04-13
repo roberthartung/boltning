@@ -1,5 +1,14 @@
 <?xml version="1.0"?>
 <overlay id="caldavcalendar-overlay-panel" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <tree id="accounttree">
+    <treechildren id="account-tree-children">
+      <treeitem>
+        <treerow>
+          <treecell label="CalDAV Accounts"/>
+        </treerow>
+      </treeitem>
+    </treechildren>
+  </tree>
   <menupopup id="accountActionsDropdown">
     <menuseparator id="accountActionsDropdownSep2"/>
     <menuitem label="Add CalDAV Account" oncommand="AddCalDAVAccount(event); event.stopPropagation();" />

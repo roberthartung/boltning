@@ -41,6 +41,7 @@ var calendarTabType = {
       // Optional function
       shouldSwitchTo: function(aArgs) {
         log.debug("shouldSwitchTo");
+        //return true;
       },
       openTab: function(aTab, aArgs) {
         // aTab.mode available
@@ -52,6 +53,7 @@ var calendarTabType = {
         aTab.width="0";
         aTab.minwidth="100";
         aTab.maxwidth="210";
+        //throw "openTab";
       },
       closeTab: function(aTab) {
         // cleanup
@@ -245,10 +247,12 @@ function parseCalendarData(login, xml) {
     /// Fully contained within week
     if(startDate >= datetime_from && endDate <= datetime_to) {
       log.debug('event.summary1', summary);
-      let xe = document.createElement('box');
+      let xe = document.createElement('description');
       xe.appendChild(document.createTextNode(summary));
       xe.setAttribute('top', offset);
-      offset += 20;
+      xe.setAttribute('height', 40);
+      //xe.setAttribute('flex', '1');
+      offset += 40;
       dayColumnElement.appendChild(xe);
     }
     /// Fully overlapping week
@@ -275,7 +279,76 @@ function parseXml(xml) {
 }
 */
 
+function createCalendarXUL() {
+  let timeslotsLabelsElement = document.getElementById('timeslots-labels');
+
+  for(var h=0;h<=23;h++) {
+    let vboxElement = document.createElement('vbox');
+    vboxElement.setAttribute('height', '100');
+
+    let labelElement = document.createElement('label');
+    labelElement.setAttribute('align', 'center');
+    labelElement.setAttribute('value', h+':00');
+    vboxElement.appendChild(labelElement);
+
+    timeslotsLabelsElement.appendChild(vboxElement);
+  }
+
+  createCalendarColumns();
+}
+
+function createCalendarColumns() {
+  createCalendarColumn('monday', 'Monday');
+  createCalendarColumn('tuesday', 'Tuesday');
+  createCalendarColumn('wednesday', 'Wednesday');
+  createCalendarColumn('thursday', 'Thursday');
+  createCalendarColumn('friday', 'Friday');
+}
+
+function createCalendarColumn(id, label) {
+  /*
+  <vbox flex="1"> <!-- 1 column -->
+    <stack flex="1"> <!-- stack -->
+      <vbox>
+        <spacer height="100" selected="true"/>
+        <spacer height="100"/>
+        <spacer height="100"/>
+        <spacer height="100"/>
+      </vbox>
+    </stack>
+  </vbox>
+  */
+  let vboxElement = document.createElement('vbox');
+  vboxElement.setAttribute('flex', '1');
+
+  let stackElement = document.createElement('stack');
+  stackElement.setAttribute('flex', '1');
+
+  let vboxSpacerElement = document.createElement('vbox');
+  for(var h=0;h<=23;h++) {
+    let spacerElement = document.createElement('spacer');
+    spacerElement.setAttribute('height', '100');
+    spacerElement.setAttribute('selected', 'true');
+    vboxSpacerElement.appendChild(spacerElement);
+  }
+  stackElement.appendChild(vboxSpacerElement);
+
+  /// Container for the actual
+  let eventsBoxElement = document.createElement('vbox');
+  eventsBoxElement.setAttribute('id', "calendar-"+id);
+  stackElement.appendChild(eventsBoxElement);
+
+
+  // TODO(rh): Add more stacks here...
+
+  vboxElement.appendChild(stackElement);
+
+  var outer = document.getElementById('calendar-columns');
+  outer.appendChild(vboxElement);
+}
+
 function init() {
+  createCalendarXUL();
   checkAccounts();
 }
 
@@ -283,11 +356,25 @@ window.addEventListener("load", function(e) {
   let tabmail = document.getElementById('tabmail');
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
-  tabmail.openTab("caldavcalendar", {background: true}); // true
+  tabmail.openTab("caldavcalendar", {background: true});
 
   /// TODO(rh): Start thread via Services.tm
   /// https://developer.mozilla.org/en-US/docs/The_Thread_Manager
-  var syncThread = Services.tm.newThread(0);
+  //var syncThread1 = Services.tm.newThread(0);
+  //var syncThread2 = Services.tm.newThread(0);
+  //log.debug("syncThread:", [syncThread1, syncThread2, syncThread1==syncThread2]);
+  var worker = new Worker("resource://caldavcalendar/worker.js");
+  log.debug(worker);
+  worker.onmessage = function(e) {
+    //result.textContent = e.data;
+    log.debug('Message received from worker', e.data);
+  }
+
+  worker.onerror = function(e) {
+    log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
+  }
+
+
   /// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIRunnable
 
   //var myLoginManager = Components.classes["@mozilla.org/login-manager;1"].getService(Components.interfaces.nsILoginManager);

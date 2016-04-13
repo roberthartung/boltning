@@ -1,11 +1,14 @@
 # Content directory
 content caldavcalendar chrome/content/
 
-# Category
-component {B9F1A53C-C865-4203-97D9-455E4251FD3C} components/caldavProtocolService.js
-contract @mozilla.org/network/protocol;1?name=caldav {B9F1A53C-C865-4203-97D9-455E4251FD3C}
-#category protocol caldav
-# @caldavcalendar/caldavcalendar.proto.caldav;1
+#component {B9F1A53C-C865-4203-97D9-455E4251FD3C} components/accountmanager.jsm
+#contract @caldavcalendar/accounts/manager;1 {B9F1A53C-C865-4203-97D9-455E4251FD3C}
+
+#component {B9F1A53C-C865-4203-97D9-455E4251FD3C} components/workerthread.js
+#contract @mozilla.org/calendar/worker;1 {B9F1A53C-C865-4203-97D9-455E4251FD3C}
+# @caldavcalendar/accounts/manager;1
+
+resource caldavcalendar chrome/content/
 
 # Calendar Tab
 overlay chrome://messenger/content/messenger.xul chrome://caldavcalendar/content/calendartab.xul

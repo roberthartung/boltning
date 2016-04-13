@@ -1,0 +1,11 @@
+spacer:nth-child(2n), #timeslots-labels vbox:nth-child(2n) {
+  background-color: #f0f0f0;
+}
+
+description {
+  background-color: #fff;
+}
+
+description:nth-child(3) {
+  background-color: red;
+}
