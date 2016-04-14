@@ -8,7 +8,84 @@ let log = Log.repository.getLogger("caldavcalendar.calendartab");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
+const WEEKSTART = ICAL.Time.MONDAY;
 var calendars = new Map();
+const now = ICAL.Time.now();
+const startOfWeek = now.startOfWeek(WEEKSTART);
+const endOfWeek = now.endOfWeek(WEEKSTART);
+
+function Calendar(displayname) {
+  this.displayname = displayname;
+  this.items = new Map();
+}
+
+Calendar.prototype.addItem = function(item) {
+  this.items.set(item.path, item);
+}
+
+function CalendarItem(path, vcalendar) {
+  this.path = path;
+  this.vcalendar = vcalendar;
+  this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
+  this.summary = this.vevent.getFirstPropertyValue('summary');
+  this.event = new ICAL.Event(this.vevent);
+  // event.duration
+  /*
+  let startDate = event.startDate.toJSDate();
+  let endDate = event.endDate.toJSDate();
+  /// Fully contained within week
+  if(startDate >= datetime_from && endDate <= datetime_to) {
+    log.debug('event.summary1', summary);
+    let xe = document.createElement('description');
+    xe.appendChild(document.createTextNode(summary));
+    xe.setAttribute('top', offset);
+    xe.setAttribute('height', 40);
+    //xe.setAttribute('flex', '1');
+    offset += 40;
+    dayColumnElement.appendChild(xe);
+  }
+
+  /// Fully overlapping week
+  else if(startDate <= datetime_from && endDate >= datetime_to) {
+    log.debug('event.summary2', summary);
+  }
+  */
+}
+
+/// Checks if the calendar is interesting for the date range
+CalendarItem.prototype.isInRange = function(start, end) {
+  let compareStartStart = this.event.startDate.compare(start);
+  let compareStartEnd = this.event.startDate.compare(end);
+  let compareEndStart = this.event.endDate.compare(start);
+  let compareEndEnd = this.event.endDate.compare(end);
+
+  // if start is smaller or end is greater -> no intereset
+  if(compareEndStart == -1 || compareStartEnd == 1) {
+    return false;
+  }
+
+  log.debug('compareStartStart', [compareStartStart, this.event.startDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
+  log.debug('compareStartEnd', [compareStartEnd, this.event.startDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
+  log.debug('compareEndStart', [compareEndStart, this.event.endDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
+  log.debug('compareEndEnd', [compareEndEnd, this.event.endDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
+}
+
+/*
+var today = new Date();
+today.setSeconds(0);
+today.setMinutes(0);
+today.setHours(0);
+var datetime_from = new Date(today.getTime()-60*60*24*2*1000);
+var datetime_to = new Date(today.getTime()+60*60*24*2*1000);
+datetime_to.setSeconds(59);
+datetime_to.setMinutes(59);
+datetime_to.setHours(23);
+*/
+/*
+log.debug('today', today);
+log.debug('datetime_from', datetime_from);
+log.debug('datetime_to', datetime_to);
+*/
 
 //log.debug("Details about bad thing only useful during debugging", {someInfo: "nothing"});
 
@@ -100,13 +177,16 @@ var calendarTabType = {
 };
 
 function checkAccounts() {
-  var numLogins = Services.logins.countLogins("", null, "");
-  if(numLogins === 0) {
-    var win = openDialog('chrome://caldavcalendar/content/AddAccount.xul');
-    log.debug("dialog:", win);
-  } else {
-    loadLogins();
-  }
+  return new Promise(function(resolve, reject) {
+    var numLogins = Services.logins.countLogins("", null, "");
+    if(numLogins === 0) {
+      var win = openDialog('chrome://caldavcalendar/content/AddAccount.xul');
+      log.debug("dialog:", win);
+      reject(new Error("No accounts found!"));
+    } else {
+      loadLogins().then(resolve);
+    }
+  });
 }
 
 function CreateAccount() {
@@ -115,76 +195,58 @@ function CreateAccount() {
 
 function loadLogins() {
   log.debug('loadLogins');
+  var promises = [];
   // Services.logins.getAllLogins({})
   var logins = Services.logins.getAllLogins({});
   for (var i = 0; i < logins.length; i++) {
     let login = logins[i];
-    setupServer(login);
+    var p = setupServer(login);
+    promises.push(p);
   }
+
+  return Promise.all(promises);
 }
 
 function setupServer(login) {
-  log.debug('setupServer', login);
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'document';
-  xhr.addEventListener('load', function(ev) {
-    //var response = parseXml(xhr.response);
-    var currentUserPrincipal = xhr.response.querySelector('current-user-principal');
-    /// For
-    if(currentUserPrincipal) {
-      var path = currentUserPrincipal.textContent.trim();
-      loadCalendars(login, path);
-    }
+  return new Promise(function(resolve, reject) {
+    log.debug('setupServer');
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'document';
+    xhr.addEventListener('load', function(ev) {
+      /// TODO(rh): Replace this with specific request for current user principcal!
+      var currentUserPrincipal = xhr.response.querySelector('current-user-principal');
+      if(currentUserPrincipal) {
+        var path = currentUserPrincipal.textContent.trim();
+        loadCalendars(login, path).then(resolve);
+      }
+    });
+    xhr.open('PROPFIND', login.hostname, true, login.username, login.password);
+    /// Headers after open(), but before send()
+    xhr.setRequestHeader('Depth', '1');
+    xhr.setRequestHeader('Prefer', 'return-minimal');
+    xhr.send();
   });
-  xhr.open('PROPFIND', login.hostname, true, login.username, login.password);
-  /// Headers after open(), but before send()
-  xhr.setRequestHeader('Depth', '1');
-  xhr.setRequestHeader('Prefer', 'return-minimal');
-  /*
-  xhr.setRequestHeader('Content-Type', 'application/xml; charset=utf-8');
-
-  <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/">
-  <d:prop>
-     <d:displayname />
-     <cs:getctag />
-  </d:prop>
-</d:propfind>
-  */
-  xhr.send();
 }
 
 function loadCalendars(login, path) {
-  log.debug('loadCalendars', login);
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'document';
-  xhr.addEventListener('load', function(ev) {
-    parseCalendars(login, xhr.response);
+  return new Promise(function(resolve, reject){
+    log.debug('loadCalendars');
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'document';
+    xhr.addEventListener('load', function(ev) {
+      parseCalendars(login, xhr.response).then(resolve);
+    });
+    xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
+    /// Headers after open(), but before send()
+    xhr.setRequestHeader('Depth', '1');
+    xhr.setRequestHeader('Prefer', 'return-minimal');
+    xhr.send();
   });
-  xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
-  /// Headers after open(), but before send()
-  xhr.setRequestHeader('Depth', '1');
-  xhr.setRequestHeader('Prefer', 'return-minimal');
-  xhr.send();
 }
-
-var today = new Date();
-today.setSeconds(0);
-today.setMinutes(0);
-today.setHours(0);
-var datetime_from = new Date(today.getTime()-60*60*24*2*1000);
-var datetime_to = new Date(today.getTime()+60*60*24*2*1000);
-datetime_to.setSeconds(59);
-datetime_to.setMinutes(59);
-datetime_to.setHours(23);
-/*
-log.debug('today', today);
-log.debug('datetime_from', datetime_from);
-log.debug('datetime_to', datetime_to);
-*/
 
 function parseCalendars(login, xml) {
   let responses = xml.documentElement.querySelectorAll('response');
-  log.debug('parseCalendars', responses.length);
+  log.debug('parseCalendars');
   var tree = document.getElementById('calendar-tree-children');
   for(var i=0;i<responses.length;i++) {
     let response = responses[i];
@@ -192,7 +254,7 @@ function parseCalendars(login, xml) {
     if(calendarElement != null) {
       var calendarDisplayName = response.querySelector('displayname').textContent.trim();
 
-      calendars.set(response.querySelector('href').textContent.trim(), calendarDisplayName);
+      calendars.set(response.querySelector('href').textContent.trim(), new Calendar(calendarDisplayName));
 
       let treeitem = document.createElement('treeitem');
       let treerow = document.createElement('treerow');
@@ -203,65 +265,53 @@ function parseCalendars(login, xml) {
       tree.appendChild(treeitem);
     }
   }
-
+  /*
   for(var key of calendars.keys()) {
-    refreshCalendar(login,key);
-    //break;
-    //log.debug('calendars:', key);
-    //break;
+    refreshCalendar(login, key, calendars.get(key));
   }
-  // calendars.forEach();
+  */
+  var promises = [];
+  calendars.forEach(function(calendar, key) {
+    var p = refreshCalendar(login, key, calendar);
+    promises.push(p);
+  });
+  return Promise.all(promises);
 }
 
-function refreshCalendar(login, path) {
+function refreshCalendar(login, path, calendar) {
   log.debug('refreshCalendar', path);
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'document';
-  xhr.addEventListener('load', function(ev) {
-    parseCalendarData(login, xhr.response);
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'document';
+    xhr.addEventListener('load', function(ev) {
+      parseCalendarData(login, calendar, xhr.response).then(resolve);
+    });
+    xhr.open('REPORT', login.hostname + path, true, login.username, login.password);
+    /// Headers after open(), but before send()
+    xhr.setRequestHeader('Depth', '1');
+    xhr.setRequestHeader('Prefer', 'return-minimal');
+    xhr.send('<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>');
   });
-  xhr.open('REPORT', login.hostname + path, true, login.username, login.password);
-  /// Headers after open(), but before send()
-  xhr.setRequestHeader('Depth', '1');
-  xhr.setRequestHeader('Prefer', 'return-minimal');
-  xhr.send('<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>');
 }
 
 let offset = 0;
 
-function parseCalendarData(login, xml) {
-  let responses = xml.querySelectorAll('response');
-  log.debug('parseCalendarData', responses.length);
-  var dayColumnElement = document.getElementById('calendar-monday');
-  for(var i=0;i<responses.length;i++) {
-    let response = responses[i];
-    var jcalData = ICAL.parse(response.querySelector('calendar-data').textContent.trim());
-    var vcalendar = new ICAL.Component(jcalData);
-    var vevent = vcalendar.getFirstSubcomponent('vevent');
-    var summary = vevent.getFirstPropertyValue('summary');
-    var event = new ICAL.Event(vevent);
-    // event.duration
-    /// TODO(rh): dont convert using .toJSDate(), but use
-    let startDate = event.startDate.toJSDate();
-    let endDate = event.endDate.toJSDate();
-    /// Fully contained within week
-    if(startDate >= datetime_from && endDate <= datetime_to) {
-      log.debug('event.summary1', summary);
-      let xe = document.createElement('description');
-      xe.appendChild(document.createTextNode(summary));
-      xe.setAttribute('top', offset);
-      xe.setAttribute('height', 40);
-      //xe.setAttribute('flex', '1');
-      offset += 40;
-      dayColumnElement.appendChild(xe);
-    }
-    /// Fully overlapping week
-    else if(startDate <= datetime_from && endDate >= datetime_to) {
-      log.debug('event.summary2', summary);
-    }
+function parseCalendarData(login, calendar, xml) {
+  return new Promise(function(resolve, reject) {
+    let responses = xml.querySelectorAll('response');
+    log.debug('parseCalendarData', responses.length);
+    var dayColumnElement = document.getElementById('calendar-monday');
+    for(var i=0;i<responses.length;i++) {
+      let response = responses[i];
+      var jcalData = ICAL.parse(response.querySelector('calendar-data').textContent.trim());
+      var vcalendar = new ICAL.Component(jcalData);
 
-    /// TODO(rh): Check start/end within week
-  }
+      var item = new CalendarItem(response.querySelector('href').textContent.trim(), vcalendar);
+      calendar.addItem(item);
+      /// TODO(rh): Check start/end within week
+    }
+    resolve();
+  });
 }
 
 /*
@@ -338,9 +388,7 @@ function createCalendarColumn(id, label) {
   eventsBoxElement.setAttribute('id', "calendar-"+id);
   stackElement.appendChild(eventsBoxElement);
 
-
   // TODO(rh): Add more stacks here...
-
   vboxElement.appendChild(stackElement);
 
   var outer = document.getElementById('calendar-columns');
@@ -349,7 +397,20 @@ function createCalendarColumn(id, label) {
 
 function init() {
   createCalendarXUL();
-  checkAccounts();
+  checkAccounts().then(displayCalendars).catch(function(err) {
+    log.error('Error in init', err);
+  });
+  //displayCalendars();
+}
+
+function displayCalendars() {
+  //log.debug('displayCalendars', calendars);
+  calendars.forEach(function(calendar, _) {
+    log.debug('displayCalendars'+_, calendar.items.size);
+    calendar.items.forEach(function(item, _) {
+      item.isInRange(startOfWeek, endOfWeek);
+    });
+  });
 }
 
 window.addEventListener("load", function(e) {
@@ -357,7 +418,6 @@ window.addEventListener("load", function(e) {
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
   tabmail.openTab("caldavcalendar", {background: true});
-
   /// TODO(rh): Start thread via Services.tm
   /// https://developer.mozilla.org/en-US/docs/The_Thread_Manager
   //var syncThread1 = Services.tm.newThread(0);
