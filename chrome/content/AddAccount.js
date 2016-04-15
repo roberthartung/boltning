@@ -3,7 +3,7 @@ Components.utils.import("resource://gre/modules/Log.jsm");
 
 var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1", Components.interfaces.nsILoginInfo, "init");
 
-let log = Log.repository.getLogger("caldavcalendar.AddAccount");
+let log = Log.repository.getLogger("boltning.AddAccount");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
@@ -14,7 +14,7 @@ function CreateAccount() {
     document.getElementById('username').value, // username
     document.getElementById('userpassword').value, // password
     "", "");
-  
+
   Services.logins.addLogin(loginInfo);
 
   return true;

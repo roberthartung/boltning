@@ -4,8 +4,8 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
-    <em:id>caldavcalendar@robert.hartung</em:id>
-    <em:name>CalDAV Calender integration</em:name>
+    <em:id>boltning@robert.hartung</em:id>
+    <em:name>Boltning - A CalDAV calendar for thunderbird</em:name>
     <em:version>1.0</em:version>
     <em:creator>roberthartung</em:creator>
 

@@ -2,9 +2,9 @@
 // Imports the Services module, that allows us to use Services.<service> to use
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Log.jsm");
-Components.utils.import("chrome://caldavcalendar/content/ical.js");
+Components.utils.import("chrome://boltning/content/ical.js");
 
-let log = Log.repository.getLogger("caldavcalendar.calendartab");
+let log = Log.repository.getLogger("boltning.calendartab");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
@@ -26,43 +26,91 @@ Calendar.prototype.addItem = function(item) {
 function CalendarItem(path, vcalendar) {
   this.path = path;
   this.vcalendar = vcalendar;
+
+  /*
+  if(vcalendar.getAllSubcomponents().length > 1) {
+    log.debug('VCalendar with more than 1 component', vcalendar);
+  }
+  */
+  /*
+  if(vcalendar.getAllSubcomponents('vevent').length > 1) {
+    log.debug('vcalendar with more than 1 vevent', vcalendar);
+  }
+  */
+
   this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
   this.summary = this.vevent.getFirstPropertyValue('summary');
+
+  vcalendar.getAllSubcomponents('vevent').forEach((vevent, _) => {
+    var event = new ICAL.Event(vevent);
+    if(event.isRecurring()) {
+      //log.debug('recurring vevent', event);
+      var it = event.iterator();
+      /*event.startDate*//* startOfWeek */
+      var occ;
+      while((occ = it.next()) && occ.compare(endOfWeek) == -1) {
+        if(occ.compare(startOfWeek) != -1) {
+          var details = event.getOccurrenceDetails(occ);
+          log.debug('getOccurrenceDetails', details.item.summary);
+        }
+      }
+    } else {
+      /// ...
+    }
+  });
+  //
+
   this.event = new ICAL.Event(this.vevent);
   // event.duration
-  /*
-  let startDate = event.startDate.toJSDate();
-  let endDate = event.endDate.toJSDate();
+/*
+  let startDate = this.event.startDate.toJSDate();
+  let endDate = this.event.endDate.toJSDate();
   /// Fully contained within week
-  if(startDate >= datetime_from && endDate <= datetime_to) {
-    log.debug('event.summary1', summary);
+  //if(startDate >= datetime_from && endDate <= datetime_to) {
+    log.debug('event.summary1', this.event.summary);
     let xe = document.createElement('description');
-    xe.appendChild(document.createTextNode(summary));
+    xe.appendChild(document.createTextNode(this.event.summary));
     xe.setAttribute('top', offset);
     xe.setAttribute('height', 40);
     //xe.setAttribute('flex', '1');
     offset += 40;
+    var dayColumnElement = document.getElementById('calendar-monday');
     dayColumnElement.appendChild(xe);
-  }
-
+  //}
+  */
   /// Fully overlapping week
+  /*
   else if(startDate <= datetime_from && endDate >= datetime_to) {
     log.debug('event.summary2', summary);
   }
   */
+
 }
 
-/// Checks if the calendar is interesting for the date range
-CalendarItem.prototype.isInRange = function(start, end) {
+/// Checks if the calendar is interesting for the date range. Following
+/// cases can be identified:
+///
+/// -----------------------------------------------------> Time, t
+///                   [s ############# e] <- event
+/// 1)             |s--------------------e|
+/// 2)                  |s-----------e|
+/// 3)             |s------------e|
+/// 4)                          |s-----------e|
+/// 5) -----e|
+/// 6)                                          |s------
+CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
   let compareStartStart = this.event.startDate.compare(start);
   let compareStartEnd = this.event.startDate.compare(end);
   let compareEndStart = this.event.endDate.compare(start);
   let compareEndEnd = this.event.endDate.compare(end);
 
-  // if start is smaller or end is greater -> no intereset
-  if(compareEndStart == -1 || compareStartEnd == 1) {
+  /// if start is smaller or end is greater -> no intereset
+  /// This handles cases 5) and 6)
+  if(compareStartEnd != -1 || compareEndStart != 1) {
     return false;
   }
+
+  return true;
 
   log.debug('compareStartStart', [compareStartStart, this.event.startDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
   log.debug('compareStartEnd', [compareStartEnd, this.event.startDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
@@ -92,7 +140,7 @@ log.debug('datetime_to', datetime_to);
 var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1", Ci.nsILoginInfo, "init");
 
 var calendarTabMonitor = {
-  monitorName: "caldavcalendar",
+  monitorName: "boltning",
   onTabTitleChanged: function() {},
   onTabOpened: function() {},
   onTabClosing: function() {},
@@ -105,16 +153,16 @@ var calendarTabMonitor = {
 
 /// Taken from http://mxr.mozilla.org/comm-central/source/mail/base/content/tabmail.xml
 var calendarTabType = {
-  name: "caldavcalendar",
+  name: "calendar",
   panelId: "calendarTabPanel",
   modes: {
-    caldavcalendar: {
+    calendar: {
       // only for tabs that should be displayed at startup
       // isDefault: true,
       // maximum tabs to display at the same time
       maxTabs: 1,
       // same as mode
-      type: "caldavcalendar",
+      type: "calendar",
       // Optional function
       shouldSwitchTo: function(aArgs) {
         log.debug("shouldSwitchTo");
@@ -180,7 +228,7 @@ function checkAccounts() {
   return new Promise(function(resolve, reject) {
     var numLogins = Services.logins.countLogins("", null, "");
     if(numLogins === 0) {
-      var win = openDialog('chrome://caldavcalendar/content/AddAccount.xul');
+      var win = openDialog('chrome://boltning/content/AddAccount.xul');
       log.debug("dialog:", win);
       reject(new Error("No accounts found!"));
     } else {
@@ -246,7 +294,8 @@ function loadCalendars(login, path) {
 
 function parseCalendars(login, xml) {
   let responses = xml.documentElement.querySelectorAll('response');
-  log.debug('parseCalendars');
+
+  log.debug('parseCalendars', xml.innerHtml);
   var tree = document.getElementById('calendar-tree-children');
   for(var i=0;i<responses.length;i++) {
     let response = responses[i];
@@ -305,7 +354,6 @@ function parseCalendarData(login, calendar, xml) {
       let response = responses[i];
       var jcalData = ICAL.parse(response.querySelector('calendar-data').textContent.trim());
       var vcalendar = new ICAL.Component(jcalData);
-
       var item = new CalendarItem(response.querySelector('href').textContent.trim(), vcalendar);
       calendar.addItem(item);
       /// TODO(rh): Check start/end within week
@@ -406,9 +454,19 @@ function init() {
 function displayCalendars() {
   //log.debug('displayCalendars', calendars);
   calendars.forEach(function(calendar, _) {
-    log.debug('displayCalendars'+_, calendar.items.size);
+
+    var items = [];
     calendar.items.forEach(function(item, _) {
-      item.isInRange(startOfWeek, endOfWeek);
+      if(item.checkRelevanceForChange(startOfWeek, endOfWeek)) {
+        items.push(item);
+      }
+    });
+    log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
+    items.forEach((item, _) => {
+      /// 1. Check duration of the event to see if it's an all-day event
+      /// These events can be directly displayed at the top of each day!
+      // if(item.event.startDate.is)
+      // log.debug('interesting item', item);
     });
   });
 }
@@ -417,13 +475,13 @@ window.addEventListener("load", function(e) {
   let tabmail = document.getElementById('tabmail');
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
-  tabmail.openTab("caldavcalendar", {background: true});
+  tabmail.openTab("calendar", {background: true});
   /// TODO(rh): Start thread via Services.tm
   /// https://developer.mozilla.org/en-US/docs/The_Thread_Manager
   //var syncThread1 = Services.tm.newThread(0);
   //var syncThread2 = Services.tm.newThread(0);
   //log.debug("syncThread:", [syncThread1, syncThread2, syncThread1==syncThread2]);
-  var worker = new Worker("resource://caldavcalendar/worker.js");
+  var worker = new Worker("resource://boltning/worker.js");
   log.debug(worker);
   worker.onmessage = function(e) {
     //result.textContent = e.data;
@@ -445,7 +503,7 @@ window.addEventListener("load", function(e) {
   if(logins.length == 0) {
     aConsoleService.logStringMessage("No accounts found :(");
     //var loginInfo = new nsLoginInfo(hostname, formSubmitURL, httprealm, username, password, usernameField, passwordField);
-    var loginInfo = new nsLoginInfo('chrome://caldavcalendar', null, 'CalDAV Calendar', 'hartung', '123456', '', ''); // PW?
+    var loginInfo = new nsLoginInfo('chrome://boltning', null, 'CalDAV Calendar', 'hartung', '123456', '', ''); // PW?
     myLoginManager.addLogin(loginInfo);
   } else {
     // Simple Array[nsLoginInfo]
@@ -464,7 +522,7 @@ window.addEventListener("load", function(e) {
 
 
       // var categoryManager = Components.classes["@mozilla.org/categorymanager;1"].getService(Components.interfaces.nsICategoryManager);
-      // categoryManager.addCategoryEnty("protocol", "caldav", "caldavcalendar.proto.caldav", false /*must be false*/, true);
+      // categoryManager.addCategoryEnty("protocol", "caldav", "boltning.proto.caldav", false /*must be false*/, true);
       // Services.logins.removeAllLogins();
 
       /*
@@ -491,8 +549,8 @@ window.addEventListener("load", function(e) {
   //Services.accounts.createAccount("someuser", "someid");
 
 
-  // openDialog('chrome://caldavcalendar/content/dialog.xul');
-  // openDialog('chrome://caldavcalendar/content/wizard.xul');
+  // openDialog('chrome://boltning/content/dialog.xul');
+  // openDialog('chrome://boltning/content/wizard.xul');
 }, false);
 
 window.addEventListener("load", function(e) {

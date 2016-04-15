@@ -7,7 +7,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Components.utils.import("resource://gre/modules/Log.jsm");
-let log = Log.repository.getLogger("caldavcalendar.workerthread");
+let log = Log.repository.getLogger("boltning.workerthread");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 

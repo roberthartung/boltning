@@ -13,7 +13,7 @@ function CaldavAccountManager() {
 
 CaldavAccountManager.prototype = {
   classDescription: "CalDAV Account Manager",
-  contractID: "@caldavcalendar/accounts/manager;1",
+  contractID: "@boltning/accounts/manager;1",
   classID: Components.ID('{B9F1A53C-C865-4203-97D9-455E4251FD3C}'),
   QueryInterface: XPCOMUtils.generateQI(
     [Components.interfaces.nsIObserver,

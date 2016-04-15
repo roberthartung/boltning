@@ -1,19 +1,19 @@
 # Content directory
-content caldavcalendar chrome/content/
+content boltning chrome/content/
 
 #component {B9F1A53C-C865-4203-97D9-455E4251FD3C} components/accountmanager.jsm
-#contract @caldavcalendar/accounts/manager;1 {B9F1A53C-C865-4203-97D9-455E4251FD3C}
+#contract @boltning/accounts/manager;1 {B9F1A53C-C865-4203-97D9-455E4251FD3C}
 
 #component {B9F1A53C-C865-4203-97D9-455E4251FD3C} components/workerthread.js
 #contract @mozilla.org/calendar/worker;1 {B9F1A53C-C865-4203-97D9-455E4251FD3C}
-# @caldavcalendar/accounts/manager;1
+# @boltning/accounts/manager;1
 
-resource caldavcalendar chrome/content/
+resource boltning chrome/content/
 
 # Calendar Tab
-overlay chrome://messenger/content/messenger.xul chrome://caldavcalendar/content/calendartab.xul
+overlay chrome://messenger/content/messenger.xul chrome://boltning/content/calendartab.xul
 
-#overlay chrome://messenger/content/mailWindowOverlay.xul chrome://caldavcalendar/content/wizard.xul
-#overlay chrome://messenger/content/messenger.xul chrome://caldavcalendar/content/dialog.xul
+#overlay chrome://messenger/content/mailWindowOverlay.xul chrome://boltning/content/wizard.xul
+#overlay chrome://messenger/content/messenger.xul chrome://boltning/content/dialog.xul
 
-# overlay chrome://messenger/content/AccountManager.xul chrome://caldavcalendar/content/AccountManagerOverlay.xul
+# overlay chrome://messenger/content/AccountManager.xul chrome://boltning/content/AccountManagerOverlay.xul

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <wizard id="theWizard" title="Add new CalDAV Account" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" onwizardfinish="CreateAccount();" onwizardcancel="Cleanup();">
-  <script type="application/javascript" src="chrome://caldavcalendar/content/AddAccount.js"></script>
+  <script type="application/javascript" src="chrome://boltning/content/AddAccount.js"></script>
 
   <wizardpage label="Label 1" description="Description 1">
     <vbox flex="1">
