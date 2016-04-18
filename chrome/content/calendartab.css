@@ -1,6 +1,33 @@
+/*
 spacer:nth-child(2n), #timeslots-labels vbox:nth-child(2n) {
   background-color: #f0f0f0;
 }
+*/
+
+#calendar-columns {
+  background-color: #fff;
+}
+
+/*
+#calendar-columns > vbox:nth-child(2n) {
+  background-color: #fff;
+}
+
+#calendar-columns > vbox:nth-child(2n+1) {
+  background-color: #eee;
+}
+*/
+
+#calendar-columns spacer:nth-child(2n) {
+  /*background-color: rgba(255,255,255,0.8);*/
+  border-bottom: 1px solid #ccc;
+}
+
+#calendar-columns spacer:nth-child(2n+1) {
+  /*background-color: rgba(255,255,255,0.8);*/
+  border-bottom: 1px solid #f0f0f0;
+}
+
 
 description {
   background-color: #fff;
@@ -8,4 +35,8 @@ description {
 
 description:nth-child(3) {
   background-color: red;
+}
+
+stack grid row box label {
+  background-color: #fff;
 }
