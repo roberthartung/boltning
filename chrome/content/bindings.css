@@ -1,0 +1,3 @@
+alldayevent {
+  -moz-binding: url("chrome://boltning/content/alldayevent.xml#alldayevent");
+}

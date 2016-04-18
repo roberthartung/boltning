@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+
+<!--<!DOCTYPE window SYSTEM "chrome://xulschoolhello/locale/bindingDialog.dtd">-->
+
+<bindings xmlns="http://www.mozilla.org/xbl" xmlns:xbl="http://www.mozilla.org/xbl" xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <binding id="alldayevent">
+    <content>
+      <xul:grid flex="1">
+        <xul:columns>
+          <xul:column xbl:inherits="flex=skip"/>
+          <xul:column xbl:inherits="flex=length"/>
+          <xul:column xbl:inherits="flex=fill"/>
+        </xul:columns>
+
+        <xul:rows>
+          <xul:row equalsize="always">
+            <xul:spacer/>
+            <xul:box><children/></xul:box>
+            <!--<xul:label xbl:inherits="value=value" class="plain alldayevent-label"/>-->
+            <xul:spacer/>
+          </xul:row>
+        </xul:rows>
+      </xul:grid>
+      <!--
+
+      <xul:hbox>
+        <xul:image class="xulschoolhello-person-image"
+          xbl:inherits="src=image" />
+        <xul:vbox flex="1">
+          <xul:label xbl:inherits="value=name" />
+          <xul:description xbl:inherits="value=greeting" />
+        </xul:vbox>
+        <xul:vbox>
+          <xul:button label="&xulschoolhello.remove.label;"
+            accesskey="&xulschoolhello.remove.accesskey;"
+            oncommand="document.getBindingParent(this).remove(event);" />
+        </xul:vbox>
+      </xul:hbox>
+    -->
+    </content>
+
+    <implementation>
+      <!--
+        - Person binding constructor.
+        -->
+      <constructor><![CDATA[
+        //this.document.getElementsByTagNameNS('http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul', 'xul:label')[0].style.backgroundColor = 'red';
+        // constructor code here.
+      ]]></constructor>
+
+      <!--
+        - Person binding destructor.
+        -->
+      <destructor><![CDATA[
+        // destructor code here.
+      ]]></destructor>
+
+      <!--
+        - "name" property.
+        -->
+        <!--
+      <property name="name" onget="return this.getAttribute('name');"
+        onset="this.setAttribute('name', val);" />
+      -->
+
+      <!--
+        - "greeting" property.
+        -->
+        <!--
+      <property name="greeting" onget="return this.getAttribute('greeting');"
+        onset="this.setAttribute('greeting', val);" />
+      -->
+
+      <!--
+        - Removes this person.
+        - @param aEvent the event that triggered this action.
+        -->
+      <method name="remove">
+        <parameter name="aEvent" />
+        <body><![CDATA[
+          this.parentNode.removeChild(this);
+        ]]>
+        </body>
+      </method>
+    </implementation>
+    <handlers>
+      <!--
+        - Click event handler.
+        -->
+        <!--
+      <handler phase="bubbling" event="click"><![CDATA[
+        window.alert(this.greeting);
+       ]]></handler>
+     -->
+    </handlers>
+  </binding>
+
+</bindings>
