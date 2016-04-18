@@ -27,6 +27,38 @@ function CalendarItem(path, vcalendar) {
   this.path = path;
   this.vcalendar = vcalendar;
 
+  /// TODO(rh): We initially check if this has got a single event, if so, we can
+  /// reduce computational power
+
+  this.vevents = this.vcalendar.getAllSubcomponents('vevent');
+  if(this.vevents.length == 1) {
+    this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
+    this.summary = this.vevent.getFirstPropertyValue('summary');
+    this.event = new ICAL.Event(this.vevent);
+  } else {
+    /// TODO(rh)
+  }
+  /*
+  vcalendar.getAllSubcomponents('vevent').forEach((vevent, _) => {
+    var event = new ICAL.Event(vevent);
+    if(event.isRecurring()) {
+      //log.debug('recurring vevent', event);
+      var it = event.iterator();
+
+      var occ;
+      while((occ = it.next()) && occ.compare(endOfWeek) == -1) {
+        if(occ.compare(startOfWeek) != -1) {
+          var details = event.getOccurrenceDetails(occ);
+          log.debug('getOccurrenceDetails', details.item.summary);
+        }
+      }
+    } else {
+      /// ...
+      log.debug('CalendarItem.event', event);
+    }
+  });
+  */
+
   /*
   if(vcalendar.getAllSubcomponents().length > 1) {
     log.debug('VCalendar with more than 1 component', vcalendar);
@@ -38,29 +70,6 @@ function CalendarItem(path, vcalendar) {
   }
   */
 
-  this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
-  this.summary = this.vevent.getFirstPropertyValue('summary');
-
-  vcalendar.getAllSubcomponents('vevent').forEach((vevent, _) => {
-    var event = new ICAL.Event(vevent);
-    if(event.isRecurring()) {
-      //log.debug('recurring vevent', event);
-      var it = event.iterator();
-      /*event.startDate*//* startOfWeek */
-      var occ;
-      while((occ = it.next()) && occ.compare(endOfWeek) == -1) {
-        if(occ.compare(startOfWeek) != -1) {
-          var details = event.getOccurrenceDetails(occ);
-          log.debug('getOccurrenceDetails', details.item.summary);
-        }
-      }
-    } else {
-      /// ...
-    }
-  });
-  //
-
-  this.event = new ICAL.Event(this.vevent);
   // event.duration
 /*
   let startDate = this.event.startDate.toJSDate();
@@ -98,7 +107,13 @@ function CalendarItem(path, vcalendar) {
 /// 4)                          |s-----------e|
 /// 5) -----e|
 /// 6)                                          |s------
+
 CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
+  if(this.event == undefined) {
+    /// TODO(rh) -> multiple events!
+    return false;
+  }
+
   let compareStartStart = this.event.startDate.compare(start);
   let compareStartEnd = this.event.startDate.compare(end);
   let compareEndStart = this.event.endDate.compare(start);
@@ -111,31 +126,13 @@ CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
   }
 
   return true;
-
+  /*
   log.debug('compareStartStart', [compareStartStart, this.event.startDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
   log.debug('compareStartEnd', [compareStartEnd, this.event.startDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
   log.debug('compareEndStart', [compareEndStart, this.event.endDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
   log.debug('compareEndEnd', [compareEndEnd, this.event.endDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
+  */
 }
-
-/*
-var today = new Date();
-today.setSeconds(0);
-today.setMinutes(0);
-today.setHours(0);
-var datetime_from = new Date(today.getTime()-60*60*24*2*1000);
-var datetime_to = new Date(today.getTime()+60*60*24*2*1000);
-datetime_to.setSeconds(59);
-datetime_to.setMinutes(59);
-datetime_to.setHours(23);
-*/
-/*
-log.debug('today', today);
-log.debug('datetime_from', datetime_from);
-log.debug('datetime_to', datetime_to);
-*/
-
-//log.debug("Details about bad thing only useful during debugging", {someInfo: "nothing"});
 
 var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1", Ci.nsILoginInfo, "init");
 
@@ -153,16 +150,16 @@ var calendarTabMonitor = {
 
 /// Taken from http://mxr.mozilla.org/comm-central/source/mail/base/content/tabmail.xml
 var calendarTabType = {
-  name: "calendar",
+  name: "boltningcalendar",
   panelId: "calendarTabPanel",
   modes: {
-    calendar: {
+    boltningcalendar: {
       // only for tabs that should be displayed at startup
       // isDefault: true,
       // maximum tabs to display at the same time
       maxTabs: 1,
       // same as mode
-      type: "calendar",
+      type: "boltningcalendar",
       // Optional function
       shouldSwitchTo: function(aArgs) {
         log.debug("shouldSwitchTo");
@@ -278,33 +275,55 @@ function setupServer(login) {
 
 function loadCalendars(login, path) {
   return new Promise(function(resolve, reject){
-    log.debug('loadCalendars');
+    //log.debug('loadCalendars');
     var xhr = new XMLHttpRequest();
     xhr.responseType = 'document';
     xhr.addEventListener('load', function(ev) {
+      log.debug('responseHeaders', xhr.getAllResponseHeaders())
       parseCalendars(login, xhr.response).then(resolve);
     });
     xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
     /// Headers after open(), but before send()
+    //xhr.setRequestHeader('Content-Type', 'text/xml; charset=UTF-8');
     xhr.setRequestHeader('Depth', '1');
-    xhr.setRequestHeader('Prefer', 'return-minimal');
+    //xhr.setRequestHeader('Prefer', 'return-minimal');
+    //xhr.send('<?xml version="1.0" encoding="UTF-8"?><D:propfind xmlns:D="DAV:"><D:allprop/></D:propfind>');
     xhr.send();
   });
+}
+
+function loadCalendar(login, path) {
+  var xhr = new XMLHttpRequest();
+  //xhr.responseType = 'document';
+  xhr.addEventListener('load', function(ev) {
+    log.debug('responseHeaders', xhr.getAllResponseHeaders())
+    log.debug('response', xhr.responseText);
+  });
+  xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
+  xhr.setRequestHeader('Content-Type', 'text/xml; charset=UTF-8');
+  xhr.setRequestHeader('Depth', '0');
+  //xhr.send('<?xml version="1.0" encoding="UTF-8"?><D:propfind xmlns:D="DAV:"><D:allprop/></D:propfind>');
+  xhr.send('<?xml version="1.0" encoding="utf-8"?><x0:propfind xmlns:x1="http://calendarserver.org/ns/" xmlns:x0="DAV:" xmlns:x3="http://apple.com/ns/ical/" xmlns:x2="urn:ietf:params:xml:ns:caldav"><x0:prop><x1:getctag/><x0:displayname/><x2:calendar-description/><x3:calendar-color/><x3:calendar-order/><x0:resourcetype/><x2:calendar-free-busy-set/></x0:prop></x0:propfind>');
 }
 
 function parseCalendars(login, xml) {
   let responses = xml.documentElement.querySelectorAll('response');
 
-  log.debug('parseCalendars', xml.innerHtml);
+  var ns = new XMLSerializer();
+  var ss= ns.serializeToString(xml);
+  log.debug('parseCalendars', ss);
   var tree = document.getElementById('calendar-tree-children');
   for(var i=0;i<responses.length;i++) {
     let response = responses[i];
     let calendarElement = response.querySelector('calendar');
     if(calendarElement != null) {
       var calendarDisplayName = response.querySelector('displayname').textContent.trim();
+      var uri = response.querySelector('href').textContent.trim();
 
-      calendars.set(response.querySelector('href').textContent.trim(), new Calendar(calendarDisplayName));
+      //log.debug('found calendar', uri);
+      //loadCalendar(login, uri);
 
+      calendars.set(uri, new Calendar(calendarDisplayName));
       let treeitem = document.createElement('treeitem');
       let treerow = document.createElement('treerow');
       let treecell = document.createElement('treecell');
@@ -401,6 +420,8 @@ function createCalendarColumns() {
   createCalendarColumn('wednesday', 'Wednesday');
   createCalendarColumn('thursday', 'Thursday');
   createCalendarColumn('friday', 'Friday');
+  createCalendarColumn('saturday', 'Saturday');
+  createCalendarColumn('sunday', 'Sunday');
 }
 
 function createCalendarColumn(id, label) {
@@ -425,13 +446,17 @@ function createCalendarColumn(id, label) {
   let vboxSpacerElement = document.createElement('vbox');
   for(var h=0;h<=23;h++) {
     let spacerElement = document.createElement('spacer');
-    spacerElement.setAttribute('height', '100');
+    spacerElement.setAttribute('height', '50');
     spacerElement.setAttribute('selected', 'true');
     vboxSpacerElement.appendChild(spacerElement);
+    let spacerElement2 = document.createElement('spacer');
+    spacerElement2.setAttribute('height', '50');
+    spacerElement2.setAttribute('selected', 'true');
+    vboxSpacerElement.appendChild(spacerElement2);
   }
   stackElement.appendChild(vboxSpacerElement);
 
-  /// Container for the actual
+  /// Container for the actual content
   let eventsBoxElement = document.createElement('vbox');
   eventsBoxElement.setAttribute('id', "calendar-"+id);
   stackElement.appendChild(eventsBoxElement);
@@ -462,11 +487,93 @@ function displayCalendars() {
       }
     });
     log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
+
+    log.debug('startOfWeek', startOfWeek);
+    log.debug('endOfWeek', endOfWeek);
+
     items.forEach((item, _) => {
-      /// 1. Check duration of the event to see if it's an all-day event
-      /// These events can be directly displayed at the top of each day!
-      // if(item.event.startDate.is)
-      // log.debug('interesting item', item);
+      if(item.event.startDate.isDate && item.event.endDate.isDate) {
+        /// All day event!
+
+        //log.debug('dates', [item.event.startDate, item.event.endDate]);
+        var diffStart = item.event.startDate.subtractDate(startOfWeek);
+        var diffEnd = endOfWeek.subtractDate(item.event.endDate);
+        var daysFromStart = diffStart.days;
+        var daysToEnd = diffEnd.days;
+
+        log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
+        log.debug('event.vcalendar', item.vcalendar);
+
+        /// <alldayevent flex="1" skip="1" fill="0" length="6" value="long 6 day event #2"/>
+        var element = document.createElement('alldayevent');
+        //log.debug('event:', [daysFromStart, (7-daysFromStart-daysToEnd+1), daysToEnd])
+        element.setAttribute('flex', '1');
+        element.setAttribute('skip', ''+daysFromStart);
+        element.setAttribute('length', ''+(7-daysFromStart-daysToEnd+1));
+        element.setAttribute('fill', ''+daysToEnd);
+        element.setAttribute('value', item.event.summary);
+
+        var labelElement = document.createElement('label');
+        labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
+        labelElement.setAttribute('class', 'plain');
+        labelElement.setAttribute('flex', '1');
+        labelElement.style.backgroundColor = 'red';
+        element.appendChild(labelElement);
+
+        /*
+        var hboxElement = document.createElement('hbox');
+        hboxElement.setAttribute('flex', "1");
+
+          //var boxElement = document.createElement('hbox');
+          //boxElement.setAttribute('flex', "1");
+        if(daysFromStart > 0) {
+          var startSpacerElement = document.createElement('spacer');
+          startSpacerElement.setAttribute('flex', "6"); // daysFromStart
+          //startSpacerElement.setAttribute('style', 'width: 85.71428571428571%;');
+          hboxElement.appendChild(startSpacerElement);
+        }
+
+        var labelBoxElement = document.createElement('box');
+        labelBoxElement.setAttribute('flex', "1"); // 7-daysFromStart-daysToEnd+1
+        var labelElement = document.createElement('label');
+        labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
+        labelElement.setAttribute('class', 'plain');
+        labelBoxElement.appendChild(labelElement);
+
+          //boxElement.appendChild(labelBoxElement);
+
+        hboxElement.appendChild(labelBoxElement);
+        */
+        /*
+        if(diffEnd > 0) {
+          var spacerElement = document.createElement('spacer');
+          spacerElement.setAttribute('flex', diffEnd);
+          hboxElement.appendChild(spacerElement);
+        }
+        */
+
+        var calendarAlldayElement = document.getElementById('calendar-allday');
+        calendarAlldayElement.appendChild(element);
+      } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
+        /// get correct column and
+        var dayColumnElement = document.getElementById('calendar-monday');
+
+        let stackElement = document.createElement('stack');
+        stackElement.setAttribute('flex', '1');
+
+        let xe = document.createElement('description');
+        xe.appendChild(document.createTextNode(item.event.summary));
+        xe.setAttribute('top', '500');
+        xe.setAttribute('height', '150');
+        xe.style.backgroundColor = 'red';
+
+
+        stackElement.appendChild(xe);
+
+        dayColumnElement.appendChild(stackElement);
+      } else {
+        throw "One of startDate / endDate is a date, but the other one is a time!";
+      }
     });
   });
 }
@@ -475,7 +582,7 @@ window.addEventListener("load", function(e) {
   let tabmail = document.getElementById('tabmail');
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
-  tabmail.openTab("calendar", {background: true});
+  tabmail.openTab("boltningcalendar", {background: true});
   /// TODO(rh): Start thread via Services.tm
   /// https://developer.mozilla.org/en-US/docs/The_Thread_Manager
   //var syncThread1 = Services.tm.newThread(0);
