@@ -2,6 +2,8 @@
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <?xml-stylesheet href="calendartab.css" type="text/css"?>
 
+<?xml-stylesheet type="text/css" href="bindings.css"?>
+
 <overlay id="boltning-overlay-panel" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" xmlns:html="http://www.w3.org/1999/xhtml">
   <script type="application/javascript" src="chrome://boltning/content/calendartab.js"/>
 <!--
@@ -13,7 +15,7 @@
   <tabpanels id="tabpanelcontainer">
     <vbox id="calendarTabPanel" flex="1">
       <modevbox id="calendar-toolbox-container" mode="calendar">
-        <toolbox class="mail-toolbox">
+        <toolbox class="mail-toolbox" flex="1" align="start">
           <toolbar class="inline-toolbar chromeclass-toolbar" mode="full" fullscreentoolbar="true">
             <toolbarbutton type="menu-button" label="Open" class="toolbarbutton-1">
               <menupopup>
@@ -24,9 +26,11 @@
           </toolbar>
         </toolbox>
       </modevbox>
+      <!--
       <notificationbox>
         <notification label="This is a warning"/>
       </notificationbox>
+      -->
       <hbox id="calendarContent" flex="1">
         <!--
           Show small bar with:
@@ -38,7 +42,6 @@
           Calendar Content goes here:
 
         -->
-
         <vbox>
           <datepicker type="grid"/>
           <tree id="calendar-tree" hidecolumnpicker="true" flex="1">
@@ -50,116 +53,149 @@
           </tree>
         </vbox>
         <!--<datepicker type="popup" value="2008/08/24"/>-->
-        <splitter/>
+        <!--<splitter/>-->
 
-        <vbox flex="1" style="overflow-x: auto; overflow-y: hidden;">
-          <hbox>
-            <hbox width="100"/>
-            <hbox equalsize="always" flex="1" id="calendar-columns-labels">
-              <label flex="1">Monday</label>
-              <label flex="1">Tuesday</label>
-              <label flex="1">Wednesday</label>
-              <label flex="1">Thursday</label>
-              <label flex="1">Friday</label>
-            </hbox>
-            <!-- Labels, e.g. days -->
-          </hbox>
-          <hbox>
-            <!-- Header, e.g. All day events -->
-          </hbox>
-          <hbox style="overflow-x: hidden; overflow-y: auto;" flex="1"> <!-- scrollbox?? -->
-            <hbox width="100"> <!-- timeslots -->
-              <vbox flex="1" id="timeslots-labels"/>
-              <vbox></vbox><!-- time indicator -->
-            </hbox>
-            <hbox equalsize="always" flex="1" id="calendar-columns">
-
-              <!--
+        <tabbox selectedIndex="1" flex="1">
+          <tabs dir="reverse">
+            <tab label="Month"/>
+            <tab label="Week"/>
+            <tab label="Day"/>
+          </tabs>
+          <tabpanels flex="1">
+            <tabpanel>
               <vbox flex="1">
+                <hbox flex="0" height="20"> <!-- Labels, e.g. days -->
+                  <hbox equalsize="always" flex="1">
+                    <label flex="1" class="plain header">Monday</label>
+                    <label flex="1" class="plain header">Tuesday</label>
+                    <label flex="1" class="plain header">Wednesday</label>
+                    <label flex="1" class="plain header">Thursday</label>
+                    <label flex="1" class="plain header">Friday</label>
+                    <label flex="1" class="plain header">Saturday</label>
+                    <label flex="1" class="plain header">Sunday</label>
+                  </hbox>
+                </hbox>
                 <stack flex="1">
-                  <vbox>
-                    <spacer height="100" selected="true"/>
-                    <spacer height="100"/>
-                    <spacer height="100"/>
-                    <spacer height="100"/>
-                  </vbox>
+                  <grid flex="1">
+                    <columns>
+                      <column flex="1"/>
+                      <column flex="1"/>
+                      <column flex="1"/>
+                      <column flex="1"/>
+                      <column flex="1"/>
+                      <column flex="1"/>
+                      <column flex="1"/>
+                    </columns>
+                    <rows flex="1" equalsize="always" orient="vertical">
+                      <row flex="1"> <!-- equalsize="always" orient="horizontal" -->
+                        <box><label value="28"/></box>
+                        <box><label value="29"/></box>
+                        <box><label value="30"/></box>
+                        <box><label value="31"/></box>
+                        <box><label value="01"/></box>
+                        <box><label value="02"/></box>
+                        <box><label value="03"/></box>
+                      </row>
+                      <row flex="1">
+                        <box><label value="04"/></box>
+                        <box><label value="05"/></box>
+                        <box><label value="06"/></box>
+                        <box><label value="07"/></box>
+                        <box><label value="08"/></box>
+                        <box><label value="09"/></box>
+                        <box><label value="10"/></box>
+                      </row>
+                      <row flex="1">
+                        <box><label value="11"/></box>
+                        <box><label value="12"/></box>
+                        <box><label value="13"/></box>
+                        <box><label value="14"/></box>
+                        <box><label value="15"/></box>
+                        <box><label value="16"/></box>
+                        <box><label value="17"/></box>
+                      </row>
+                      <row flex="1">
+                        <box><label value="18"/></box>
+                        <box><label value="19"/></box>
+                        <box><label value="20"/></box>
+                        <box><label value="21"/></box>
+                        <box><label value="22"/></box>
+                        <box><label value="23"/></box>
+                        <box><label value="24"/></box>
+                      </row>
+                      <row flex="1">
+                        <box><label value="25"/></box>
+                        <box><label value="26"/></box>
+                        <box><label value="27"/></box>
+                        <box><label value="28"/></box>
+                        <box><label value="29"/></box>
+                        <box><label value="30"/></box>
+                        <box><label value="01"/></box>
+                      </row>
+                    </rows>
+                  </grid>
+                  <grid flex="1">
+                    <columns>
+                      <column flex="4"/>
+                      <column flex="2"/>
+                      <column flex="1"/>
+                    </columns>
+                    <rows flex="1" equalsize="always" orient="vertical">
+                      <spacer flex="1"/>
+                      <row flex="1" equalsize="always">
+                        <spacer/>
+                        <vbox flex="1">
+                          <label value="Foobar?" style="background-color: red;"/>
+                        </vbox>
+                        <spacer/>
+                      </row>
+                      <spacer flex="1"/>
+                      <spacer flex="1"/>
+                      <spacer flex="1"/>
+                    </rows>
+                  </grid>
                 </stack>
               </vbox>
-            -->
+            </tabpanel>
+            <tabpanel>
+              <vbox style="overflow-x: auto; overflow-y: hidden;" flex="1"><!--  flex="1" style="overflow-x: auto; overflow-y: hidden;" -->
+                <hbox> <!-- Labels, e.g. days -->
+                  <hbox width="100"/>
+                  <hbox equalsize="always" flex="1" id="calendar-columns-labels">
+                    <label flex="1" class="plain header">Monday</label>
+                    <label flex="1" class="plain header">Tuesday</label>
+                    <label flex="1" class="plain header">Wednesday</label>
+                    <label flex="1" class="plain header">Thursday</label>
+                    <label flex="1" class="plain header">Friday</label>
+                    <label flex="1" class="plain header">Saturday</label>
+                    <label flex="1" class="plain header">Sunday</label>
+                  </hbox>
+                </hbox>
+                <hbox> <!-- Header, e.g. All day events -->
+                  <box width="100">
+                    <label flex="1" class="plain header">All-Day</label>
+                  </box>
+                  <vbox id="calendar-allday" flex="1">
+                    <!--<alldayevent flex="1" skip="6" fill="0" length="1" value="single day #2"/>
+                    <alldayevent flex="1" skip="1" fill="0" length="6" value="long 6 day event #2"/>-->
+                  </vbox>
+                </hbox>
+                <hbox style="overflow-x: hidden; overflow-y: auto;" flex="1"> <!-- scrollbox?? -->
+                  <hbox width="100"> <!-- timeslots -->
+                    <vbox flex="1" id="timeslots-labels"/>
+                    <vbox></vbox><!-- time indicator -->
+                  </hbox>
+                  <hbox equalsize="always" flex="1" id="calendar-columns"/>
+                </hbox>
+              </vbox>
+            </tabpanel>
+            <tabpanel>Day</tabpanel>
+          </tabpanels>
+        </tabbox>
+        <!--       <splitter/>
 
-            </hbox>
-          </hbox>
-        </vbox>
-
-        <!--
-
-        <grid flex="5">
-          <columns>
-            <column flex="1"/>
-            <column flex="1"/>
-            <column flex="1"/>
-            <column flex="1"/>
-            <column flex="1"/>
-          </columns>
-          <rows>
-            <row>
-              <label value="Monday"/>
-              <label value="Tuesday"/>
-              <label value="Wednesday"/>
-              <label value="Thursday"/>
-              <label value="Friday"/>
-            </row>
-            <row>
-              All Day Events
-            </row>
-            <row>
-              <stack id="calendar-monday"/>
-              <stack id="calendar-tuesday"/>
-              <stack id="calendar-wednesday"/>
-              <stack id="calendar-thursday"/>
-              <stack id="calendar-friday"/>
-            </row>
-          </rows>
-        </grid>
-      -->
-        <!--
-        <hbox flex="1">
-          <vbox flex="1">
-            <label value="Monday"/>
-            <stack flex="1" id="calendar-monday">
-
-            </stack>
-          </vbox>
-          <vbox flex="1">
-            <label value="Tuesday"/>
-            <stack flex="1" id="calendar-tuesday">
-
-            </stack>
-          </vbox>
-          <vbox flex="1">
-            <label value="Wednesday"/>
-            <stack flex="1" id="calendar-wednesday">
-
-            </stack>
-          </vbox>
-          <vbox flex="1">
-            <label value="Thursday"/>
-            <stack flex="1" id="calendar-thursday">
-
-            </stack>
-          </vbox>
-          <vbox flex="1">
-            <label value="Friday"/>
-            <stack flex="1" id="calendar-friday">
-
-            </stack>
-          </vbox>
-        </hbox>
-      -->
-        <splitter/>
-        <colorpicker/>
+        <colorpicker/>-->
       </hbox>
-
     </vbox>
   </tabpanels>
 
