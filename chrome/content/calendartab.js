@@ -588,6 +588,7 @@ window.addEventListener("load", function(e) {
   //var syncThread1 = Services.tm.newThread(0);
   //var syncThread2 = Services.tm.newThread(0);
   //log.debug("syncThread:", [syncThread1, syncThread2, syncThread1==syncThread2]);
+  /*
   var worker = new Worker("resource://boltning/worker.js");
   log.debug(worker);
   worker.onmessage = function(e) {
@@ -598,7 +599,7 @@ window.addEventListener("load", function(e) {
   worker.onerror = function(e) {
     log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
   }
-
+  */
 
   /// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIRunnable
 

@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+
+<bindings xmlns="http://www.mozilla.org/xbl" xmlns:xbl="http://www.mozilla.org/xbl" xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <binding id="calendar-monthview">
+    <content>
+      <xul:vbox flex="1">
+        <xul:hbox flex="0" height="20"> <!-- Labels, e.g. days -->
+          <xul:hbox equalsize="always" flex="1">
+            <children includes="label"/>
+          </xul:hbox>
+        </xul:hbox>
+        <xul:stack flex="1" style="overflow-x: hidden; overflow-y: auto;"> <!-- This forces a scrollbar if needed -->
+        <!--<box flex="1" style="overflow-x: hidden; overflow-y: auto;">-->
+          <xul:grid flex="1">
+            <xul:columns>
+              <children includes="column"/>
+            </xul:columns>
+            <!--
+              equalsize is required here, because if the data grid
+              grows to more than 100% height, we have scrollbar
+              ... but to make sure the underlying (background) grid
+              has the same dimensions for each week, we have to force
+              equalsize here!
+           -->
+            <xul:rows flex="1" orient="vertical">
+              <children includes="row"/>
+            </xul:rows>
+          </xul:grid>
+          <!-- one grid for each week -->
+          <xul:grid flex="1">
+            <xul:columns flex="1">
+              <xul:column flex="1"/>
+            </xul:columns>
+            <xul:rows flex="1" equalsize="always" orient="vertical">
+              <children includes="stack"/>
+            </xul:rows>
+          </xul:grid>
+        </xul:stack>
+      </xul:vbox>
+    </content>
+    <implementation>
+      <constructor><![CDATA[
+        // constructor code here.
+      ]]></constructor>
+
+      <destructor><![CDATA[
+        // destructor code here.
+      ]]></destructor>
+
+      <method name="remove">
+        <parameter name="aEvent" />
+        <body><![CDATA[
+          this.parentNode.removeChild(this);
+        ]]>
+        </body>
+      </method>
+
+    </implementation>
+    <handlers>
+      <!-- no handlers implemented -->
+    </handlers>
+  </binding>
+
+</bindings>

@@ -1,3 +1,11 @@
 alldayevent {
   -moz-binding: url("chrome://boltning/content/alldayevent.xml#alldayevent");
 }
+
+calendar-weekview {
+  -moz-binding: url("chrome://boltning/content/calendar-weekview.xml#calendar-weekview");
+}
+
+calendar-monthview {
+  -moz-binding: url("chrome://boltning/content/calendar-monthview.xml#calendar-monthview");
+}

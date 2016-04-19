@@ -40,22 +40,21 @@
 
         <!--
           Calendar Content goes here:
-
         -->
         <vbox>
           <datepicker type="grid"/>
+          <!-- TODO(rh): Use own element here to display calendars -->
           <tree id="calendar-tree" hidecolumnpicker="true" flex="1">
             <treecols>
               <treecol label="Calendar" flex="1" id="name" />
             </treecols>
-
             <treechildren id="calendar-tree-children"/>
           </tree>
         </vbox>
-        <!--<datepicker type="popup" value="2008/08/24"/>-->
-        <!--<splitter/>-->
 
-        <tabbox selectedIndex="1" flex="1">
+        <!--<splitter/>-->
+        <!-- 1: day, 2: week, 3: month -->
+        <tabbox selectedIndex="2" flex="1">
           <tabs dir="reverse">
             <tab label="Month"/>
             <tab label="Week"/>
@@ -63,189 +62,119 @@
           </tabs>
           <tabpanels flex="1">
             <tabpanel>
-              <vbox flex="1">
-                <hbox flex="0" height="20"> <!-- Labels, e.g. days -->
-                  <hbox equalsize="always" flex="1">
-                    <label flex="1" class="plain header">Monday</label>
-                    <label flex="1" class="plain header">Tuesday</label>
-                    <label flex="1" class="plain header">Wednesday</label>
-                    <label flex="1" class="plain header">Thursday</label>
-                    <label flex="1" class="plain header">Friday</label>
-                    <label flex="1" class="plain header">Saturday</label>
-                    <label flex="1" class="plain header">Sunday</label>
-                  </hbox>
-                </hbox>
-                <stack flex="1" style="overflow-x: hidden; overflow-y: auto;"> <!-- This forces a scrollbar if needed -->
-                <!--<box flex="1" style="overflow-x: hidden; overflow-y: auto;">-->
-                  <grid flex="1">
-                    <columns>
-                      <column flex="1"/>
-                      <column flex="1"/>
-                      <column flex="1"/>
-                      <column flex="1"/>
-                      <column flex="1"/>
-                      <column flex="1"/>
-                      <column flex="1"/>
-                    </columns>
-                    <!--
-                      equalsize is required here, because if the data grid
-                      grows to more than 100% height, we have scrollbar
-                      ... but to make sure the underlying (background) grid
-                      has the same dimensions for each week, we have to force
-                      equalsize here!
-                   -->
-                    <rows flex="1" orient="vertical"> <!-- flex: fill all space horizontally --> <!--  equalsize="always" -->
-                      <row flex="1">  <!-- flex: force same height -->
-                        <box><label value="28" class="plain header" flex="1"/></box>
-                        <box><label value="29" class="plain header" flex="1"/></box>
-                        <box><label value="30" class="plain header" flex="1"/></box>
-                        <box><label value="31" class="plain header" flex="1"/></box>
-                        <box><label value="01" class="plain header" flex="1"/></box>
-                        <box><label value="02" class="plain header" flex="1"/></box>
-                        <box><label value="03" class="plain header" flex="1"/></box>
-                      </row>
-                      <row flex="1">
-                        <box><label value="04" class="plain header" flex="1"/></box>
-                        <box><label value="05" class="plain header" flex="1"/></box>
-                        <box><label value="06" class="plain header" flex="1"/></box>
-                        <box><label value="07" class="plain header" flex="1"/></box>
-                        <box><label value="08" class="plain header" flex="1"/></box>
-                        <box><label value="09" class="plain header" flex="1"/></box>
-                        <box><label value="10" class="plain header" flex="1"/></box>
-                      </row>
-                      <row flex="1">
-                        <box><label value="11" class="plain header" flex="1"/></box>
-                        <box><label value="12" class="plain header" flex="1"/></box>
-                        <box><label value="13" class="plain header" flex="1"/></box>
-                        <box><label value="14" class="plain header" flex="1"/></box>
-                        <box><label value="15" class="plain header" flex="1"/></box>
-                        <box><label value="16" class="plain header" flex="1"/></box>
-                        <box><label value="17" class="plain header" flex="1"/></box>
-                      </row>
-                      <row flex="1">
-                        <box><label value="18" class="plain header" flex="1"/></box>
-                        <box><label value="19" class="plain header" flex="1"/></box>
-                        <box><label value="20" class="plain header" flex="1"/></box>
-                        <box><label value="21" class="plain header" flex="1"/></box>
-                        <box><label value="22" class="plain header" flex="1"/></box>
-                        <box><label value="23" class="plain header" flex="1"/></box>
-                        <box><label value="24" class="plain header" flex="1"/></box>
-                      </row>
-                      <row flex="1">
-                        <box><label value="25" class="plain header" flex="1"/></box>
-                        <box><label value="26" class="plain header" flex="1"/></box>
-                        <box><label value="27" class="plain header" flex="1"/></box>
-                        <box><label value="28" class="plain header" flex="1"/></box>
-                        <box><label value="29" class="plain header" flex="1"/></box>
-                        <box><label value="30" class="plain header" flex="1"/></box>
-                        <box><label value="01" class="plain header" flex="1"/></box>
-                      </row>
-                    </rows>
-                  </grid>
-                  <!-- one grid for each week -->
-                  <grid flex="1">
-                    <columns flex="1">
-                      <column flex="1"/>
-                    </columns>
-                    <rows flex="1" equalsize="always" orient="vertical">
-                      <vbox flex="1">
-                        <spacer height="20"/>
+              <calendar-monthview flex="1">
+                <label flex="1" class="plain header">Monday</label>
+                <label flex="1" class="plain header">Tuesday</label>
+                <label flex="1" class="plain header">Wednesday</label>
+                <label flex="1" class="plain header">Thursday</label>
+                <label flex="1" class="plain header">Friday</label>
+                <label flex="1" class="plain header">Saturday</label>
+                <label flex="1" class="plain header">Sunday</label>
 
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
-                        </alldayevent>
-                        <alldayevent skip="1" fill="1" length="5">
-                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
-                        </alldayevent>
-                      </vbox>
-                      <box flex="1">Row 1</box>
-                      <box flex="1">Row 2</box>
-                      <box flex="1">Row 3</box>
-                      <box flex="1">Row 4</box>
-                    </rows>
-                  </grid>
+                <column flex="1"/>
+                <column flex="1"/>
+                <column flex="1"/>
+                <column flex="1"/>
+                <column flex="1"/>
+                <column flex="1"/>
+                <column flex="1"/>
+
+                <row flex="1">
+                  <box><label value="28" class="plain header" flex="1"/></box>
+                  <box><label value="29" class="plain header" flex="1"/></box>
+                  <box><label value="30" class="plain header" flex="1"/></box>
+                  <box><label value="31" class="plain header" flex="1"/></box>
+                  <box><label value="01" class="plain header" flex="1"/></box>
+                  <box><label value="02" class="plain header" flex="1"/></box>
+                  <box><label value="03" class="plain header" flex="1"/></box>
+                </row>
+                <row flex="1">
+                  <box><label value="04" class="plain header" flex="1"/></box>
+                  <box><label value="05" class="plain header" flex="1"/></box>
+                  <box><label value="06" class="plain header" flex="1"/></box>
+                  <box><label value="07" class="plain header" flex="1"/></box>
+                  <box><label value="08" class="plain header" flex="1"/></box>
+                  <box><label value="09" class="plain header" flex="1"/></box>
+                  <box><label value="10" class="plain header" flex="1"/></box>
+                </row>
+                <row flex="1">
+                  <box><label value="11" class="plain header" flex="1"/></box>
+                  <box><label value="12" class="plain header" flex="1"/></box>
+                  <box><label value="13" class="plain header" flex="1"/></box>
+                  <box><label value="14" class="plain header" flex="1"/></box>
+                  <box><label value="15" class="plain header" flex="1"/></box>
+                  <box><label value="16" class="plain header" flex="1"/></box>
+                  <box><label value="17" class="plain header" flex="1"/></box>
+                </row>
+                <row flex="1">
+                  <box><label value="18" class="plain header" flex="1"/></box>
+                  <box><label value="19" class="plain header" flex="1"/></box>
+                  <box><label value="20" class="plain header" flex="1"/></box>
+                  <box><label value="21" class="plain header" flex="1"/></box>
+                  <box><label value="22" class="plain header" flex="1"/></box>
+                  <box><label value="23" class="plain header" flex="1"/></box>
+                  <box><label value="24" class="plain header" flex="1"/></box>
+                </row>
+                <row flex="1">
+                  <box><label value="25" class="plain header" flex="1"/></box>
+                  <box><label value="26" class="plain header" flex="1"/></box>
+                  <box><label value="27" class="plain header" flex="1"/></box>
+                  <box><label value="28" class="plain header" flex="1"/></box>
+                  <box><label value="29" class="plain header" flex="1"/></box>
+                  <box><label value="30" class="plain header" flex="1"/></box>
+                  <box><label value="01" class="plain header" flex="1"/></box>
+                </row>
+
+                <stack flex="1" orient="vertical">
+                  <alldayevent skip="1" fill="1" length="5" top="20">
+                    <label class="plain header" value="My Event? // 20" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="40">
+                    <label class="plain header" value="My Event? // 40" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="60">
+                    <label class="plain header" value="My Event? // 60" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="80">
+                    <label class="plain header" value="My Event? // 80" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="100">
+                    <label class="plain header" value="My Event? // 100" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="120">
+                    <label class="plain header" value="My Event? // 120" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="140">
+                    <label class="plain header" value="My Event? // 140" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="160">
+                    <label class="plain header" value="My Event? // 160" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="1" fill="1" length="5" top="180">
+                    <label class="plain header" value="My Event? // 180" style="background-color: green;" flex="1"/>
+                  </alldayevent>
+                  <alldayevent skip="0" fill="6" length="1" top="20">
+                    <label class="plain header" value="Short event // 20" style="background-color: green;" flex="1"/>
+                  </alldayevent>
                 </stack>
-              </vbox>
+                <stack></stack>
+                <stack></stack>
+                <stack></stack>
+                <stack></stack>
+              </calendar-monthview>
             </tabpanel>
             <tabpanel>
-              <vbox style="overflow-x: auto; overflow-y: hidden;" flex="1"><!--  flex="1" style="overflow-x: auto; overflow-y: hidden;" -->
-                <hbox> <!-- Labels, e.g. days -->
-                  <hbox width="100"/>
-                  <hbox equalsize="always" flex="1" id="calendar-columns-labels">
-                    <label flex="1" class="plain header">Monday</label>
-                    <label flex="1" class="plain header">Tuesday</label>
-                    <label flex="1" class="plain header">Wednesday</label>
-                    <label flex="1" class="plain header">Thursday</label>
-                    <label flex="1" class="plain header">Friday</label>
-                    <label flex="1" class="plain header">Saturday</label>
-                    <label flex="1" class="plain header">Sunday</label>
-                  </hbox>
-                </hbox>
-                <hbox> <!-- Header, e.g. All day events -->
-                  <box width="100">
-                    <label flex="1" class="plain header">All-Day</label>
-                  </box>
-                  <vbox id="calendar-allday" flex="1">
-                    <!--<alldayevent flex="1" skip="6" fill="0" length="1" value="single day #2"/>
-                    <alldayevent flex="1" skip="1" fill="0" length="6" value="long 6 day event #2"/>-->
-                  </vbox>
-                </hbox>
-                <hbox style="overflow-x: hidden; overflow-y: auto;" flex="1"> <!-- scrollbox?? -->
-                  <hbox width="100"> <!-- timeslots -->
-                    <vbox flex="1" id="timeslots-labels"/>
-                    <vbox></vbox><!-- time indicator -->
-                  </hbox>
-                  <hbox equalsize="always" flex="1" id="calendar-columns"/>
-                </hbox>
-              </vbox>
+              <calendar-weekview id="calendar-weekview" flex="1">
+                <label flex="1" class="plain header">Monday</label>
+                <label flex="1" class="plain header">Tuesday</label>
+                <label flex="1" class="plain header">Wednesday</label>
+                <label flex="1" class="plain header">Thursday</label>
+                <label flex="1" class="plain header">Friday</label>
+                <label flex="1" class="plain header">Saturday</label>
+                <label flex="1" class="plain header">Sunday</label>
+
+                <!-- allday events can be direct children for this element -->
+              </calendar-weekview>
             </tabpanel>
             <tabpanel>Day</tabpanel>
           </tabpanels>

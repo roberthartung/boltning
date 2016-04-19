@@ -37,6 +37,18 @@ description:nth-child(3) {
   background-color: red;
 }
 
+/*
 stack grid row box label {
   background-color: #fff;
 }
+*/
+
+row box label {
+  background-color: #fff;
+}
+
+/*
+label {
+  background-color: orange;
+}
+*/

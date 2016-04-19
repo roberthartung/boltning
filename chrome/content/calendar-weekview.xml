@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+
+<bindings xmlns="http://www.mozilla.org/xbl" xmlns:xbl="http://www.mozilla.org/xbl" xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <binding id="calendar-weekview">
+    <content>
+      <xul:vbox style="overflow-x: auto; overflow-y: hidden;" flex="1"><!--  flex="1" style="overflow-x: auto; overflow-y: hidden;" -->
+        <!-- Labels, e.g. days -->
+        <xul:hbox>
+          <xul:hbox width="100"></xul:hbox>
+          <!-- id="calendar-columns-labels" -->
+          <xul:hbox equalsize="always" flex="1">
+            <children includes="label"/>
+          </xul:hbox>
+        </xul:hbox>
+        <!-- Header, e.g. All day events -->
+        <xul:hbox>
+          <xul:box width="100">
+            <xul:label flex="1" class="plain header">All-Day</xul:label>
+          </xul:box>
+          <xul:vbox id="calendar-allday" flex="1">
+            <children includes="alldayevent"/>
+          </xul:vbox>
+        </xul:hbox>
+        <xul:hbox style="overflow-x: hidden; overflow-y: auto;" flex="1"> <!-- scrollbox?? -->
+          <xul:hbox width="100"> <!-- timeslots -->
+            <xul:vbox flex="1" id="timeslots-labels"></xul:vbox>
+            <xul:vbox></xul:vbox><!-- time indicator -->
+          </xul:hbox>
+          <xul:hbox equalsize="always" flex="1" id="calendar-columns"></xul:hbox>
+        </xul:hbox>
+      </xul:vbox>
+    </content>
+    <implementation>
+      <constructor><![CDATA[
+        // constructor code here.
+      ]]></constructor>
+
+      <destructor><![CDATA[
+        // destructor code here.
+      ]]></destructor>
+
+      <method name="remove">
+        <parameter name="aEvent" />
+        <body><![CDATA[
+          this.parentNode.removeChild(this);
+        ]]>
+        </body>
+      </method>
+
+    </implementation>
+    <handlers>
+      <!-- no handlers implemented -->
+    </handlers>
+  </binding>
+
+</bindings>
