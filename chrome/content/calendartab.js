@@ -8,6 +8,23 @@ let log = Log.repository.getLogger("boltning.calendartab");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
+const { require } = Components.utils.import("resource://gre/modules/commonjs/toolkit/require.js", {})
+var notifications = require("sdk/notifications");
+//Components.utils.import("resource://gre/modules/PopupNotifications.jsm");
+//log.debug('notifications', typeof notifications);
+
+
+notifications.notify({
+  title: "Jabberwocky",
+  text: "'Twas brillig, and the slithy toves",
+  data: "did gyre and gimble in the wabe",
+  onClick: function (data) {
+    log.debug(data);
+    // console.log(this.data) would produce the same result.
+  }
+});
+
+
 const WEEKSTART = ICAL.Time.MONDAY;
 var calendars = new Map();
 const now = ICAL.Time.now();
