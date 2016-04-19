@@ -493,8 +493,8 @@ function displayCalendars() {
 
     items.forEach((item, _) => {
       if(item.event.startDate.isDate && item.event.endDate.isDate) {
+        /// TODO(rh): Check if start or end date is outside week's end/start!
         /// All day event!
-
         //log.debug('dates', [item.event.startDate, item.event.endDate]);
         var diffStart = item.event.startDate.subtractDate(startOfWeek);
         var diffEnd = endOfWeek.subtractDate(item.event.endDate);

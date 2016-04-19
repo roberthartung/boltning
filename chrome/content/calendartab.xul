@@ -75,7 +75,8 @@
                     <label flex="1" class="plain header">Sunday</label>
                   </hbox>
                 </hbox>
-                <stack flex="1">
+                <stack flex="1" style="overflow-x: hidden; overflow-y: auto;"> <!-- This forces a scrollbar if needed -->
+                <!--<box flex="1" style="overflow-x: hidden; overflow-y: auto;">-->
                   <grid flex="1">
                     <columns>
                       <column flex="1"/>
@@ -86,72 +87,129 @@
                       <column flex="1"/>
                       <column flex="1"/>
                     </columns>
-                    <rows flex="1" equalsize="always" orient="vertical">
-                      <row flex="1"> <!-- equalsize="always" orient="horizontal" -->
-                        <box><label value="28"/></box>
-                        <box><label value="29"/></box>
-                        <box><label value="30"/></box>
-                        <box><label value="31"/></box>
-                        <box><label value="01"/></box>
-                        <box><label value="02"/></box>
-                        <box><label value="03"/></box>
+                    <!--
+                      equalsize is required here, because if the data grid
+                      grows to more than 100% height, we have scrollbar
+                      ... but to make sure the underlying (background) grid
+                      has the same dimensions for each week, we have to force
+                      equalsize here!
+                   -->
+                    <rows flex="1" orient="vertical"> <!-- flex: fill all space horizontally --> <!--  equalsize="always" -->
+                      <row flex="1">  <!-- flex: force same height -->
+                        <box><label value="28" class="plain header" flex="1"/></box>
+                        <box><label value="29" class="plain header" flex="1"/></box>
+                        <box><label value="30" class="plain header" flex="1"/></box>
+                        <box><label value="31" class="plain header" flex="1"/></box>
+                        <box><label value="01" class="plain header" flex="1"/></box>
+                        <box><label value="02" class="plain header" flex="1"/></box>
+                        <box><label value="03" class="plain header" flex="1"/></box>
                       </row>
                       <row flex="1">
-                        <box><label value="04"/></box>
-                        <box><label value="05"/></box>
-                        <box><label value="06"/></box>
-                        <box><label value="07"/></box>
-                        <box><label value="08"/></box>
-                        <box><label value="09"/></box>
-                        <box><label value="10"/></box>
+                        <box><label value="04" class="plain header" flex="1"/></box>
+                        <box><label value="05" class="plain header" flex="1"/></box>
+                        <box><label value="06" class="plain header" flex="1"/></box>
+                        <box><label value="07" class="plain header" flex="1"/></box>
+                        <box><label value="08" class="plain header" flex="1"/></box>
+                        <box><label value="09" class="plain header" flex="1"/></box>
+                        <box><label value="10" class="plain header" flex="1"/></box>
                       </row>
                       <row flex="1">
-                        <box><label value="11"/></box>
-                        <box><label value="12"/></box>
-                        <box><label value="13"/></box>
-                        <box><label value="14"/></box>
-                        <box><label value="15"/></box>
-                        <box><label value="16"/></box>
-                        <box><label value="17"/></box>
+                        <box><label value="11" class="plain header" flex="1"/></box>
+                        <box><label value="12" class="plain header" flex="1"/></box>
+                        <box><label value="13" class="plain header" flex="1"/></box>
+                        <box><label value="14" class="plain header" flex="1"/></box>
+                        <box><label value="15" class="plain header" flex="1"/></box>
+                        <box><label value="16" class="plain header" flex="1"/></box>
+                        <box><label value="17" class="plain header" flex="1"/></box>
                       </row>
                       <row flex="1">
-                        <box><label value="18"/></box>
-                        <box><label value="19"/></box>
-                        <box><label value="20"/></box>
-                        <box><label value="21"/></box>
-                        <box><label value="22"/></box>
-                        <box><label value="23"/></box>
-                        <box><label value="24"/></box>
+                        <box><label value="18" class="plain header" flex="1"/></box>
+                        <box><label value="19" class="plain header" flex="1"/></box>
+                        <box><label value="20" class="plain header" flex="1"/></box>
+                        <box><label value="21" class="plain header" flex="1"/></box>
+                        <box><label value="22" class="plain header" flex="1"/></box>
+                        <box><label value="23" class="plain header" flex="1"/></box>
+                        <box><label value="24" class="plain header" flex="1"/></box>
                       </row>
                       <row flex="1">
-                        <box><label value="25"/></box>
-                        <box><label value="26"/></box>
-                        <box><label value="27"/></box>
-                        <box><label value="28"/></box>
-                        <box><label value="29"/></box>
-                        <box><label value="30"/></box>
-                        <box><label value="01"/></box>
+                        <box><label value="25" class="plain header" flex="1"/></box>
+                        <box><label value="26" class="plain header" flex="1"/></box>
+                        <box><label value="27" class="plain header" flex="1"/></box>
+                        <box><label value="28" class="plain header" flex="1"/></box>
+                        <box><label value="29" class="plain header" flex="1"/></box>
+                        <box><label value="30" class="plain header" flex="1"/></box>
+                        <box><label value="01" class="plain header" flex="1"/></box>
                       </row>
                     </rows>
                   </grid>
+                  <!-- one grid for each week -->
                   <grid flex="1">
-                    <columns>
-                      <column flex="4"/>
-                      <column flex="2"/>
+                    <columns flex="1">
                       <column flex="1"/>
                     </columns>
                     <rows flex="1" equalsize="always" orient="vertical">
-                      <spacer flex="1"/>
-                      <row flex="1" equalsize="always">
-                        <spacer/>
-                        <vbox flex="1">
-                          <label value="Foobar?" style="background-color: red;"/>
-                        </vbox>
-                        <spacer/>
-                      </row>
-                      <spacer flex="1"/>
-                      <spacer flex="1"/>
-                      <spacer flex="1"/>
+                      <vbox flex="1">
+                        <spacer height="20"/>
+
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Event?" style="background-color: green;" flex="1"/>
+                        </alldayevent>
+                        <alldayevent skip="1" fill="1" length="5">
+                          <label class="plain header" value="My Alldayevent #2 (length of 5)" style="background-color: orange;" flex="1"/>
+                        </alldayevent>
+                      </vbox>
+                      <box flex="1">Row 1</box>
+                      <box flex="1">Row 2</box>
+                      <box flex="1">Row 3</box>
+                      <box flex="1">Row 4</box>
                     </rows>
                   </grid>
                 </stack>
