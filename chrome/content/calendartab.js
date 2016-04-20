@@ -3,6 +3,7 @@
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Log.jsm");
 Components.utils.import("chrome://boltning/content/ical.js");
+Components.utils.import("resource://boltningmodules/accountmanager.jsm");
 
 let log = Log.repository.getLogger("boltning.calendartab");
 log.level = Log.Level.Debug;
@@ -12,7 +13,6 @@ const { require } = Components.utils.import("resource://gre/modules/commonjs/too
 var notifications = require("sdk/notifications");
 //Components.utils.import("resource://gre/modules/PopupNotifications.jsm");
 //log.debug('notifications', typeof notifications);
-
 
 notifications.notify({
   title: "Jabberwocky",
@@ -24,12 +24,19 @@ notifications.notify({
   }
 });
 
-
 const WEEKSTART = ICAL.Time.MONDAY;
 var calendars = new Map();
 const now = ICAL.Time.now();
+/// This will be OK, as it is Monday 0:0:0
 const startOfWeek = now.startOfWeek(WEEKSTART);
+/// This is kind of OK, because it will be Sunday 0:0:0, in terms of date this
+/// is fine, but not datetime wise
 const endOfWeek = now.endOfWeek(WEEKSTART);
+/// ... Thus add 1 day to be on Monday 0:0:0
+endOfWeek.addDuration(new ICAL.Duration({days: 1}));
+
+// log.debug('startOfWeek', startOfWeek);
+// log.debug('endOfWeek', endOfWeek);
 
 function Calendar(displayname) {
   this.displayname = displayname;
@@ -481,6 +488,7 @@ function createCalendarColumn(id, label) {
   // TODO(rh): Add more stacks here...
   vboxElement.appendChild(stackElement);
 
+  /// TODO(rh): This is actually an inner shadow element, thus we should NOT use it!
   var outer = document.getElementById('calendar-columns');
   outer.appendChild(vboxElement);
 }
@@ -503,30 +511,50 @@ function displayCalendars() {
         items.push(item);
       }
     });
-    log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
+    //log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
 
-    log.debug('startOfWeek', startOfWeek);
-    log.debug('endOfWeek', endOfWeek);
+    //log.debug('startOfWeek', startOfWeek);
+    //log.debug('endOfWeek', endOfWeek);
 
     items.forEach((item, _) => {
       if(item.event.startDate.isDate && item.event.endDate.isDate) {
-        /// TODO(rh): Check if start or end date is outside week's end/start!
+        var startDate = item.event.startDate;
+        var endDate = item.event.endDate;
+
+        /// Only if it is not larger!
+        if(startDate.compare(startOfWeek) != 1) {
+          startDate = startOfWeek;
+        }
+
+        /// Only if it is not smaller!
+        if(endDate.compare(endOfWeek) != -1) {
+          endDate = endOfWeek;
+        }
+
+        var diffDuration = endDate.subtractDate(startDate);
+        if(diffDuration.isNegative) {
+          throw "Expected duration of an event to be positive (e.g. start < end!)";
+        }
+        var duration = diffDuration.days;
+
+        //log.debug('event', [item.event.summary, startDate, endDate, duration]);
+        //return;
+
         /// All day event!
-        //log.debug('dates', [item.event.startDate, item.event.endDate]);
+
         var diffStart = item.event.startDate.subtractDate(startOfWeek);
-        var diffEnd = endOfWeek.subtractDate(item.event.endDate);
         var daysFromStart = diffStart.days;
-        var daysToEnd = diffEnd.days;
+        var daysToEnd = 7 - daysFromStart - duration;
 
-        log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
-        log.debug('event.vcalendar', item.vcalendar);
+        log.debug('event', [item.event.summary, startDate, endDate, duration]);
 
-        /// <alldayevent flex="1" skip="1" fill="0" length="6" value="long 6 day event #2"/>
+        //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
+        //log.debug('event.vcalendar', item.vcalendar);
+
         var element = document.createElement('alldayevent');
-        //log.debug('event:', [daysFromStart, (7-daysFromStart-daysToEnd+1), daysToEnd])
         element.setAttribute('flex', '1');
         element.setAttribute('skip', ''+daysFromStart);
-        element.setAttribute('length', ''+(7-daysFromStart-daysToEnd+1));
+        element.setAttribute('length', ''+duration);
         element.setAttribute('fill', ''+daysToEnd);
         element.setAttribute('value', item.event.summary);
 
@@ -536,38 +564,6 @@ function displayCalendars() {
         labelElement.setAttribute('flex', '1');
         labelElement.style.backgroundColor = 'red';
         element.appendChild(labelElement);
-
-        /*
-        var hboxElement = document.createElement('hbox');
-        hboxElement.setAttribute('flex', "1");
-
-          //var boxElement = document.createElement('hbox');
-          //boxElement.setAttribute('flex', "1");
-        if(daysFromStart > 0) {
-          var startSpacerElement = document.createElement('spacer');
-          startSpacerElement.setAttribute('flex', "6"); // daysFromStart
-          //startSpacerElement.setAttribute('style', 'width: 85.71428571428571%;');
-          hboxElement.appendChild(startSpacerElement);
-        }
-
-        var labelBoxElement = document.createElement('box');
-        labelBoxElement.setAttribute('flex', "1"); // 7-daysFromStart-daysToEnd+1
-        var labelElement = document.createElement('label');
-        labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
-        labelElement.setAttribute('class', 'plain');
-        labelBoxElement.appendChild(labelElement);
-
-          //boxElement.appendChild(labelBoxElement);
-
-        hboxElement.appendChild(labelBoxElement);
-        */
-        /*
-        if(diffEnd > 0) {
-          var spacerElement = document.createElement('spacer');
-          spacerElement.setAttribute('flex', diffEnd);
-          hboxElement.appendChild(spacerElement);
-        }
-        */
 
         var calendarAlldayElement = document.getElementById('calendar-allday');
         calendarAlldayElement.appendChild(element);

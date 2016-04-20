@@ -54,7 +54,7 @@
 
         <!--<splitter/>-->
         <!-- 1: day, 2: week, 3: month -->
-        <tabbox selectedIndex="2" flex="1">
+        <tabbox selectedIndex="1" flex="1">
           <tabs dir="reverse">
             <tab label="Month"/>
             <tab label="Week"/>

@@ -9,6 +9,9 @@ content boltning chrome/content/
 # @boltning/accounts/manager;1
 
 resource boltning chrome/content/
+#resource modules chrome/modules/
+
+resource boltningmodules modules/
 
 # Calendar Tab
 overlay chrome://messenger/content/messenger.xul chrome://boltning/content/calendartab.xul
