@@ -4,6 +4,7 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Log.jsm");
 Components.utils.import("chrome://boltning/content/ical.js");
 Components.utils.import("resource://boltningmodules/accountmanager.jsm");
+Components.utils.import("resource://boltningmodules/util.jsm");
 
 let log = Log.repository.getLogger("boltning.calendartab");
 log.level = Log.Level.Debug;
@@ -48,20 +49,55 @@ Calendar.prototype.addItem = function(item) {
 }
 
 function CalendarItem(path, vcalendar) {
+  // log.debug(path);
   this.path = path;
   this.vcalendar = vcalendar;
+
+
 
   /// TODO(rh): We initially check if this has got a single event, if so, we can
   /// reduce computational power
 
   this.vevents = this.vcalendar.getAllSubcomponents('vevent');
+
+  /*
+  if(path === '/caldav.php/hartung/Raum%20105/63b6aa57-ab8c-465f-a528-4cde0f405aaa.ics') {
+    log.debug('FOUND Android Lab Event!!!', this.vevents);
+  }
+  */
+
   if(this.vevents.length == 1) {
     this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
     this.summary = this.vevent.getFirstPropertyValue('summary');
     this.event = new ICAL.Event(this.vevent);
+  } else if(this.vevents.length > 1) {
+    this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
+    this.summary = this.vevent.getFirstPropertyValue('summary');
+    this.event = new ICAL.Event(this.vevent);
+
+    log.warn('More than 1 event', this.event.summary);
+    /// Assumption is that the first event is recurring, and the other events
+    /// are the refinements of occurences.
+
+    /// 1. -> Test if first event is recurring
+    try {
+      if(!this.event.isRecurring()) {
+        throw new Error("Event is not recurring");
+      }
+    } catch(e) {
+        log.error(e.message, vcalendar);
+    }
+
+    /*
+    this.vevent = this.vevents[this.vevents.length-1];//
+    this.summary = this.vevent.getFirstPropertyValue('summary');
+    this.event = new ICAL.Event(this.vevent);
+
+    */
   } else {
-    /// TODO(rh)
+    log.error("No events for item!", vcalendar);
   }
+
   /*
   vcalendar.getAllSubcomponents('vevent').forEach((vevent, _) => {
     var event = new ICAL.Event(vevent);
@@ -82,42 +118,6 @@ function CalendarItem(path, vcalendar) {
     }
   });
   */
-
-  /*
-  if(vcalendar.getAllSubcomponents().length > 1) {
-    log.debug('VCalendar with more than 1 component', vcalendar);
-  }
-  */
-  /*
-  if(vcalendar.getAllSubcomponents('vevent').length > 1) {
-    log.debug('vcalendar with more than 1 vevent', vcalendar);
-  }
-  */
-
-  // event.duration
-/*
-  let startDate = this.event.startDate.toJSDate();
-  let endDate = this.event.endDate.toJSDate();
-  /// Fully contained within week
-  //if(startDate >= datetime_from && endDate <= datetime_to) {
-    log.debug('event.summary1', this.event.summary);
-    let xe = document.createElement('description');
-    xe.appendChild(document.createTextNode(this.event.summary));
-    xe.setAttribute('top', offset);
-    xe.setAttribute('height', 40);
-    //xe.setAttribute('flex', '1');
-    offset += 40;
-    var dayColumnElement = document.getElementById('calendar-monday');
-    dayColumnElement.appendChild(xe);
-  //}
-  */
-  /// Fully overlapping week
-  /*
-  else if(startDate <= datetime_from && endDate >= datetime_to) {
-    log.debug('event.summary2', summary);
-  }
-  */
-
 }
 
 /// Checks if the calendar is interesting for the date range. Following
@@ -132,12 +132,53 @@ function CalendarItem(path, vcalendar) {
 /// 5) -----e|
 /// 6)                                          |s------
 
+function checkRecurringEventForRelevance(event, start, end) {
+
+}
+
 CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
-  if(this.event == undefined) {
-    /// TODO(rh) -> multiple events!
+  /// One single event -> directly parsable!
+  if(this.event != undefined) {
+    if(this.event.isRecurring()) {
+      return checkRecurringEventForRelevance(this.event, start, end);
+    } else {
+      let cmp = DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
+      /*
+      if(this.summary == 'Android Lab') {
+        log.debug('Android Lab', [this.event.startDate, this.event.endDate, start, end, cmp]);
+      }
+      */
+      return cmp;
+    }
+  } else {
+
+  }
+
+  if(this.event.isRecurring()) {
+    var it = this.event.iterator();
+    var occ;
+    while((occ = it.next()) && occ.compare(end) == -1) {
+      if(occ.compare(start) != -1) {
+        var details = this.event.getOccurrenceDetails(occ);
+        var cmp = DateTimeUtility.compareRangesByDate(details.startDate, details.endDate, start, end);
+        log.debug('getOccurrenceDetails', [details.item.summary, cmp, details.startDate, details.endDate]);
+        if(cmp) {
+          log.debug('occurence found', [details.item]);
+          this.event = details.item;
+          /// TODO(rh): HACK
+          this.event.startDate = details.startDate;
+          this.event.endDate = details.endDate;
+          return cmp;
+        }
+      }
+    }
+
+    // return DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
+
     return false;
   }
 
+  /*
   let compareStartStart = this.event.startDate.compare(start);
   let compareStartEnd = this.event.startDate.compare(end);
   let compareEndStart = this.event.endDate.compare(start);
@@ -150,6 +191,7 @@ CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
   }
 
   return true;
+  */
   /*
   log.debug('compareStartStart', [compareStartStart, this.event.startDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
   log.debug('compareStartEnd', [compareStartEnd, this.event.startDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
@@ -333,9 +375,9 @@ function loadCalendar(login, path) {
 function parseCalendars(login, xml) {
   let responses = xml.documentElement.querySelectorAll('response');
 
-  var ns = new XMLSerializer();
-  var ss= ns.serializeToString(xml);
-  log.debug('parseCalendars', ss);
+  //var ns = new XMLSerializer();
+  //var ss= ns.serializeToString(xml);
+  //log.debug('parseCalendars', ss);
   var tree = document.getElementById('calendar-tree-children');
   for(var i=0;i<responses.length;i++) {
     let response = responses[i];
@@ -376,7 +418,11 @@ function refreshCalendar(login, path, calendar) {
     var xhr = new XMLHttpRequest();
     xhr.responseType = 'document';
     xhr.addEventListener('load', function(ev) {
+      //log.debug('calendar loaded', calendar);
       parseCalendarData(login, calendar, xhr.response).then(resolve);
+    });
+    xhr.addEventListener('error', function(ev) {
+      // log.error("Unable to refreshCalendar", path);
     });
     xhr.open('REPORT', login.hostname + path, true, login.username, login.password);
     /// Headers after open(), but before send()
@@ -391,15 +437,14 @@ let offset = 0;
 function parseCalendarData(login, calendar, xml) {
   return new Promise(function(resolve, reject) {
     let responses = xml.querySelectorAll('response');
-    log.debug('parseCalendarData', responses.length);
-    var dayColumnElement = document.getElementById('calendar-monday');
+    //log.debug('parseCalendarData', [calendar.displayname, responses.length]);
     for(var i=0;i<responses.length;i++) {
       let response = responses[i];
       var jcalData = ICAL.parse(response.querySelector('calendar-data').textContent.trim());
       var vcalendar = new ICAL.Component(jcalData);
-      var item = new CalendarItem(response.querySelector('href').textContent.trim(), vcalendar);
+      let href = response.querySelector('href').textContent.trim();
+      var item = new CalendarItem(href, vcalendar);
       calendar.addItem(item);
-      /// TODO(rh): Check start/end within week
     }
     resolve();
   });
@@ -468,6 +513,7 @@ function createCalendarColumn(id, label) {
   stackElement.setAttribute('flex', '1');
 
   let vboxSpacerElement = document.createElement('vbox');
+
   for(var h=0;h<=23;h++) {
     let spacerElement = document.createElement('spacer');
     spacerElement.setAttribute('height', '50');
@@ -481,7 +527,8 @@ function createCalendarColumn(id, label) {
   stackElement.appendChild(vboxSpacerElement);
 
   /// Container for the actual content
-  let eventsBoxElement = document.createElement('vbox');
+  let eventsBoxElement = document.createElement('stack'); // vbox
+  eventsBoxElement.className = 'calendar-column';
   eventsBoxElement.setAttribute('id', "calendar-"+id);
   stackElement.appendChild(eventsBoxElement);
 
@@ -503,15 +550,25 @@ function init() {
 
 function displayCalendars() {
   //log.debug('displayCalendars', calendars);
-  calendars.forEach(function(calendar, _) {
 
+  var columns = document.getElementById('calendar-columns');
+  // document.querySelectorAll('#calendar-columns .calendar-column');
+  columns = columns.querySelectorAll('.calendar-column');
+
+  calendars.forEach(function(calendar, _) {
     var items = [];
     calendar.items.forEach(function(item, _) {
-      if(item.checkRelevanceForChange(startOfWeek, endOfWeek)) {
+      //log.debug('item for ' + calendar.displayname, item.event.summary);
+      let cmp = item.checkRelevanceForChange(startOfWeek, endOfWeek);
+      if(cmp) {
+        log.debug('relevant item', [item.summary, cmp]);
         items.push(item);
       }
     });
-    //log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
+
+
+    // log.debug('items', items);
+    // log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
 
     //log.debug('startOfWeek', startOfWeek);
     //log.debug('endOfWeek', endOfWeek);
@@ -533,20 +590,21 @@ function displayCalendars() {
 
         var diffDuration = endDate.subtractDate(startDate);
         if(diffDuration.isNegative) {
+          log.error("diffDuration: NEGATIVE!", item);
           throw "Expected duration of an event to be positive (e.g. start < end!)";
         }
-        var duration = diffDuration.days;
+        var duration = diffDuration.days+diffDuration.weeks*7;
 
         //log.debug('event', [item.event.summary, startDate, endDate, duration]);
         //return;
 
         /// All day event!
 
-        var diffStart = item.event.startDate.subtractDate(startOfWeek);
+        var diffStart = startDate.subtractDate(startOfWeek);
         var daysFromStart = diffStart.days;
         var daysToEnd = 7 - daysFromStart - duration;
 
-        log.debug('event', [item.event.summary, startDate, endDate, duration]);
+        //log.debug('event', [item.event.summary, startDate, endDate, duration]);
 
         //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
         //log.debug('event.vcalendar', item.vcalendar);
@@ -568,22 +626,34 @@ function displayCalendars() {
         var calendarAlldayElement = document.getElementById('calendar-allday');
         calendarAlldayElement.appendChild(element);
       } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
+        /// Step 1: Find correct column!
+
+        var diffToStartOfWeek = item.event.startDate.subtractDate(startOfWeek);
+
+        var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
+
+        var diffEvent = item.event.endDate.subtractDate(item.event.startDate);
+        /// This is equal to the column!
+
+        //log.debug('event', [item.event.summary, diffStartDays]);
+
         /// get correct column and
-        var dayColumnElement = document.getElementById('calendar-monday');
+        // var dayColumnElement = document.getElementById('calendar-monday');
 
         let stackElement = document.createElement('stack');
         stackElement.setAttribute('flex', '1');
 
         let xe = document.createElement('description');
         xe.appendChild(document.createTextNode(item.event.summary));
-        xe.setAttribute('top', '500');
-        xe.setAttribute('height', '150');
-        xe.style.backgroundColor = 'red';
+        xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100));
+        xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
+        xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
 
 
         stackElement.appendChild(xe);
 
-        dayColumnElement.appendChild(stackElement);
+        columns[diffStartDays].appendChild(stackElement);
+        // dayColumnElement.appendChild(stackElement);
       } else {
         throw "One of startDate / endDate is a date, but the other one is a time!";
       }
