@@ -21,6 +21,7 @@
             <children includes="alldayevent"/>
           </xul:vbox>
         </xul:hbox>
+        <xul:splitter/>
         <xul:hbox style="overflow-x: hidden; overflow-y: auto;" flex="1"> <!-- scrollbox?? -->
           <xul:hbox width="100"> <!-- timeslots -->
             <xul:vbox flex="1" id="timeslots-labels"></xul:vbox>
