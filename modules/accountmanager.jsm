@@ -81,16 +81,46 @@ function CalendarItem(path, vcalendar) {
     this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
     this.summary = this.vevent.getFirstPropertyValue('summary');
     this.event = new ICAL.Event(this.vevent);
-  } else if(this.vevents.length > 1) {
-    this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
-    this.summary = this.vevent.getFirstPropertyValue('summary');
-    this.event = new ICAL.Event(this.vevent);
 
-    log.warn('More than 1 event', this.event.summary);
+    this.events = [this.event];
+  } else if(this.vevents.length > 1) {
+    this.events = [];
+    this.isRecurring = false;
+    for(var v=0;v<this.vevents.length;v++) {
+      let vevent = this.vevents[v];
+      let event = new ICAL.Event(vevent);
+
+      if(event.isRecurrenceException()) {
+        continue;
+      }
+
+      /// We assume, that there is only a single event
+      if(event.isRecurring()) {
+        if(v != 0) {
+          throw "Event is recurring, but index != 0!";
+        }
+        this.isRecurring = true;
+        this.summary = vevent.getFirstPropertyValue('summary');
+        this.event = event;
+      } else {
+        this.events.push(event);
+      }
+
+      // let summary = vevent.getFirstPropertyValue('summary');
+      // summary
+      // log.debug('events #'+v, [event.isRecurring(), event.isRecurrenceException()]);
+    }
+
+    //this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
+    //this.summary = this.vevent.getFirstPropertyValue('summary');
+    //this.event = new ICAL.Event(this.vevent);
+
+    // log.warn('More than 1 event', this.event.summary);
     /// Assumption is that the first event is recurring, and the other events
     /// are the refinements of occurences.
 
     /// 1. -> Test if first event is recurring
+    /*
     try {
       if(!this.event.isRecurring()) {
         throw new Error("Event is not recurring");
@@ -98,12 +128,12 @@ function CalendarItem(path, vcalendar) {
     } catch(e) {
         log.error(e.message, vcalendar);
     }
+    */
 
     /*
     this.vevent = this.vevents[this.vevents.length-1];//
     this.summary = this.vevent.getFirstPropertyValue('summary');
     this.event = new ICAL.Event(this.vevent);
-
     */
   } else {
     log.error("No events for item!", vcalendar);
@@ -136,43 +166,43 @@ CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
   /// One single event -> directly parsable!
   if(this.event != undefined) {
     if(this.event.isRecurring()) {
+      var it = this.event.iterator();
+      var occ;
+      while((occ = it.next()) && occ.compare(end) == -1) {
+        if(occ.compare(start) != -1) {
+          var details = this.event.getOccurrenceDetails(occ);
+          var cmp = DateTimeUtility.compareRangesByDate(details.startDate, details.endDate, start, end);
+          log.debug('getOccurrenceDetails', [details.item.summary, cmp, details.startDate, details.endDate]);
+          if(cmp) {
+            log.debug('occurence found', [details.item]);
+            this.event = details.item;
+            /// TODO(rh): HACK
+            this.event.startDate = details.startDate;
+            this.event.endDate = details.endDate;
+            return cmp;
+          }
+        }
+      }
+
+      // return DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
+
+      return false;
+    } else {
+      let cmp = DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
+      return cmp;
+    }
+  } else {
+    log.error('CalendarItem with more than 1 event. Ignoring.');
+    /// ...
+    /*
+    if(this.event.isRecurring()) {
       // return checkRecurringEventForRelevance(this.event, start, end);
       // -> TODO
       return false;
     } else {
-      let cmp = DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
-      /*
-      if(this.summary == 'Android Lab') {
-        log.debug('Android Lab', [this.event.startDate, this.event.endDate, start, end, cmp]);
-      }
-      */
-      return cmp;
+
     }
-  } else {
-
-  }
-
-  if(this.event.isRecurring()) {
-    var it = this.event.iterator();
-    var occ;
-    while((occ = it.next()) && occ.compare(end) == -1) {
-      if(occ.compare(start) != -1) {
-        var details = this.event.getOccurrenceDetails(occ);
-        var cmp = DateTimeUtility.compareRangesByDate(details.startDate, details.endDate, start, end);
-        log.debug('getOccurrenceDetails', [details.item.summary, cmp, details.startDate, details.endDate]);
-        if(cmp) {
-          log.debug('occurence found', [details.item]);
-          this.event = details.item;
-          /// TODO(rh): HACK
-          this.event.startDate = details.startDate;
-          this.event.endDate = details.endDate;
-          return cmp;
-        }
-      }
-    }
-
-    // return DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
-
+    */
     return false;
   }
 

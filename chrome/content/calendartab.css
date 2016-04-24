@@ -37,6 +37,10 @@ description:nth-child(3) {
   background-color: red;
 }
 
+#calendar-columns label, #calendar-columns description {
+  cursor: pointer;
+}
+
 /*
 stack grid row box label {
   background-color: #fff;

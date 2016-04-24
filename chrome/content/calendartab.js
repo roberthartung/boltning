@@ -257,7 +257,7 @@ function displayCalendars() {
         //log.debug('item for ' + calendar.displayname, item.event.summary);
         let cmp = item.checkRelevanceForChange(startOfWeek, endOfWeek);
         if(cmp) {
-          log.debug('relevant item', [item.summary, cmp]);
+          // log.debug('relevant item', [item.summary, cmp]);
           items.push(item);
         }
       });
@@ -299,7 +299,7 @@ function displayCalendars() {
           element.setAttribute('fill', ''+daysToEnd);
           element.setAttribute('value', item.event.summary);
 
-          var labelElement = document.createElement('label');
+          var labelElement = document.createElement('description');
           labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
           labelElement.setAttribute('class', 'plain');
           labelElement.setAttribute('flex', '1');
@@ -310,29 +310,25 @@ function displayCalendars() {
           calendarAlldayElement.appendChild(element);
         } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
           /// Step 1: Find correct column!
-
           var diffToStartOfWeek = item.event.startDate.subtractDate(startOfWeek);
-
           var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
-
           var diffEvent = item.event.endDate.subtractDate(item.event.startDate);
 
           //log.debug('event', [item.event.summary, diffStartDays]);
 
-          let stackElement = document.createElement('stack');
-          stackElement.setAttribute('flex', '1');
+          //let stackElement = document.createElement('stack');
+          //stackElement.setAttribute('flex', '1');
 
           let xe = document.createElement('description');
           xe.appendChild(document.createTextNode(item.event.summary));
-          xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100));
+          xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100+diffToStartOfWeek.minutes/60.0*100.0));
           xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
           // xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
           xe.style.backgroundColor = calendar.color;
+          //stackElement.appendChild(xe);
 
-
-          stackElement.appendChild(xe);
-
-          columns[diffStartDays].appendChild(stackElement);
+          //columns[diffStartDays].appendChild(stackElement);
+          columns[diffStartDays].appendChild(xe);
           // dayColumnElement.appendChild(stackElement);
         } else {
           throw "One of startDate / endDate is a date, but the other one is a time!";
