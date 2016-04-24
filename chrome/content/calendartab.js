@@ -545,6 +545,11 @@ function init() {
   checkAccounts().then(displayCalendars).catch(function(err) {
     log.error('Error in init', err);
   });
+  var accountButton = document.getElementById('calendar-accounts');
+  accountButton.addEventListener('click', function(ev) {
+    // ev.preventDefault()
+    openDialog('chrome://boltning/content/AccountManagerDialog.xul');
+  });
   //displayCalendars();
 }
 
