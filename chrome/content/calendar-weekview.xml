@@ -17,12 +17,19 @@
           <xul:box width="100">
             <xul:label flex="1" class="plain header">All-Day</xul:label>
           </xul:box>
-          <xul:vbox id="calendar-allday" flex="1">
+          <!--
+          <xul:vbox style="overflow-x: hidden; overflow-y: scroll;" id="calendar-allday" flex="1">
             <children includes="alldayevent"/>
           </xul:vbox>
+          -->
+          <xul:stack style="overflow-x: hidden; overflow-y: scroll;" id="calendar-allday" flex="1">
+            <children includes="alldayevent"/>
+          </xul:stack>
         </xul:hbox>
+
         <xul:splitter/>
-        <xul:hbox style="overflow-x: hidden; overflow-y: auto;" flex="1"> <!-- scrollbox?? -->
+
+        <xul:hbox style="overflow-x: hidden; overflow-y: scroll;" flex="1"> <!-- scrollbox?? -->
           <xul:hbox width="100"> <!-- timeslots -->
             <xul:vbox flex="1" id="timeslots-labels"></xul:vbox>
             <xul:vbox></xul:vbox><!-- time indicator -->

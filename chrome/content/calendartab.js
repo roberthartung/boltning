@@ -247,10 +247,20 @@ function displayCalendars() {
   // document.querySelectorAll('#calendar-columns .calendar-column');
   columns = columns.querySelectorAll('.calendar-column');
 
+  var alldayevents = new Map();
+
+  /// Durations from 1 to 7 days
+  alldayevents.set(7, []);
+  alldayevents.set(6, []);
+  alldayevents.set(5, []);
+  alldayevents.set(4, []);
+  alldayevents.set(3, []);
+  alldayevents.set(2, []);
+  alldayevents.set(1, []);
+
   for(var a=0;a<accounts.accounts.length;a++) {
     let account = accounts.accounts[a];
     account.calendars.forEach(function(calendar, path) {
-
 
       var items = [];
       calendar.items.forEach(function(item, _) {
@@ -288,26 +298,17 @@ function displayCalendars() {
           var daysFromStart = diffStart.days;
           var daysToEnd = 7 - daysFromStart - duration;
 
+          alldayevents.get(duration).push({
+            daysFromStart: daysFromStart,
+            daysToEnd: daysToEnd,
+            duration: duration,
+            item: item,
+            calendar: calendar
+          });
+
           //log.debug('event', [item.event.summary, startDate, endDate, duration]);
           //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
           //log.debug('event.vcalendar', item.vcalendar);
-
-          var element = document.createElement('alldayevent');
-          element.setAttribute('flex', '1');
-          element.setAttribute('skip', ''+daysFromStart);
-          element.setAttribute('length', ''+duration);
-          element.setAttribute('fill', ''+daysToEnd);
-          element.setAttribute('value', item.event.summary);
-
-          var labelElement = document.createElement('description');
-          labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
-          labelElement.setAttribute('class', 'plain');
-          labelElement.setAttribute('flex', '1');
-          labelElement.style.backgroundColor = calendar.color;
-          element.appendChild(labelElement);
-
-          var calendarAlldayElement = document.getElementById('calendar-allday');
-          calendarAlldayElement.appendChild(element);
         } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
           /// Step 1: Find correct column!
           var diffToStartOfWeek = item.event.startDate.subtractDate(startOfWeek);
@@ -334,10 +335,64 @@ function displayCalendars() {
           throw "One of startDate / endDate is a date, but the other one is a time!";
         }
       });
-
-
     });
   }
+
+
+  var dailyOffsets = new Map();
+
+  for(var i=0;i<7;i++) {
+    dailyOffsets.set(i, new Map());
+  }
+
+  // var offset = 0;
+  alldayevents.forEach(function(events, duration) {
+    events.forEach(function(event, _) {
+      var element = document.createElement('alldayevent');
+      /// We have to find a free slot, so the event fits in there!
+      var slot = 0;
+      while(true) {
+        /// By default the event fits into the slot for all days
+        var fits = true;
+        /// Loop over days and check if the slot really fits
+        for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
+          /// Get the map of slots for this day!
+          var day = dailyOffsets.get(d);
+          if(day.has(slot)) {
+            fits = false;
+            break;
+          }
+        }
+
+        if(fits) {
+          /// If it fits, reserve slot across all days
+          for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
+            var day = dailyOffsets.get(d);
+            day.set(slot, true);
+          }
+          break;
+        }
+        slot++;
+      }
+
+      // offset++;
+      element.setAttribute('top', slot*20);
+      //element.setAttribute('flex', '1');
+      element.setAttribute('skip', ''+event.daysFromStart);
+      element.setAttribute('length', ''+event.duration);
+      element.setAttribute('fill', ''+event.daysToEnd);
+      element.setAttribute('value', event.item.event.summary);
+      var labelElement = document.createElement('description');
+      labelElement.appendChild(document.createTextNode(event.item.event.summary.trim()));
+      //labelElement.setAttribute('class', 'plain');
+      labelElement.setAttribute('flex', '1');
+      labelElement.style.backgroundColor = event.calendar.color;
+      element.appendChild(labelElement);
+
+      var calendarAlldayElement = document.getElementById('calendar-allday');
+      calendarAlldayElement.appendChild(element);
+    });
+  });
 }
 
 window.addEventListener("load", function(e) {
