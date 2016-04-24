@@ -22,6 +22,24 @@ var XMLSerializer = Components.Constructor("@mozilla.org/xmlextras/xmlserializer
 
 var EXPORTED_SYMBOLS = ["accounts"];
 
+/*
+/// Checks if the calendar is interesting for the date range. Following
+/// cases can be identified:
+///
+/// -----------------------------------------------------> Time, t
+///                   [s ############# e] <- event
+/// 1)             |s--------------------e|
+/// 2)                  |s-----------e|
+/// 3)             |s------------e|
+/// 4)                          |s-----------e|
+/// 5) -----e|
+/// 6)                                          |s------
+
+function checkRecurringEventForRelevance(event, start, end) {
+
+}
+*/
+
 function findPrincipcal(login) {
   return new Promise(function(resolve, reject) {
     HttpCaldavRequest.propfind(login, '/', '<d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal/></d:prop></d:propfind>').then(function(responses) {
@@ -218,21 +236,7 @@ function Calendar(account, href, xml) {
 Calendar.prototype.refresh = function refresh() {
   var items = new Map();
   this.items = items;
-  /*
-  return new Promise(function(resolve, reject) {
-    let responses = xml.querySelectorAll('response');
-    //log.debug('parseCalendarData', [calendar.displayname, responses.length]);
-    for(var i=0;i<responses.length;i++) {
-      let response = responses[i];
-      var jcalData = ICAL.parse(response.querySelector('calendar-data').textContent.trim());
-      var vcalendar = new ICAL.Component(jcalData);
-      let href = response.querySelector('href').textContent.trim();
-      var item = new CalendarItem(href, vcalendar);
-      calendar.addItem(item);
-    }
-    resolve();
-  });
-  */
+
   return HttpCaldavRequest.report(this.account.login, this.href, '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>', '1').then(function(responses) {
     for(var i=0;i<responses.length;i++) {
       let response = responses[i];
@@ -309,11 +313,5 @@ function AccountManager() {
 
   setup();
 }
-
-AccountManager.prototype.getAccounts = function getAccounts() {
-
-}
-
-// log.debug("New Account Manager");
 
 var accounts = new AccountManager();

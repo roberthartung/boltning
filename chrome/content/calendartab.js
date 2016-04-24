@@ -38,41 +38,6 @@ const endOfWeek = now.endOfWeek(WEEKSTART);
 /// ... Thus add 1 day to be on Monday 0:0:0
 endOfWeek.addDuration(new ICAL.Duration({days: 1}));
 
-// log.debug('startOfWeek', startOfWeek);
-// log.debug('endOfWeek', endOfWeek);
-
-/*
-function Calendar(displayname) {
-  this.displayname = displayname;
-  this.items = new Map();
-}
-
-Calendar.prototype.addItem = function(item) {
-  this.items.set(item.path, item);
-}
-*/
-
-
-/*
-/// Checks if the calendar is interesting for the date range. Following
-/// cases can be identified:
-///
-/// -----------------------------------------------------> Time, t
-///                   [s ############# e] <- event
-/// 1)             |s--------------------e|
-/// 2)                  |s-----------e|
-/// 3)             |s------------e|
-/// 4)                          |s-----------e|
-/// 5) -----e|
-/// 6)                                          |s------
-
-function checkRecurringEventForRelevance(event, start, end) {
-
-}
-*/
-
-var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1", Ci.nsILoginInfo, "init");
-
 var calendarTabMonitor = {
   monitorName: "boltning",
   onTabTitleChanged: function() {},
@@ -157,200 +122,6 @@ var calendarTabType = {
     log.debug("saveTabState");
   }
 };
-
-/*
-function checkAccounts() {
-  return new Promise(function(resolve, reject) {
-    var numLogins = Services.logins.countLogins("", null, "");
-    if(numLogins === 0) {
-      var win = openDialog('chrome://boltning/content/AddAccount.xul');
-      //log.debug("dialog:", win);
-      reject(new Error("No accounts found!"));
-    } else {
-      loadLogins().then(resolve);
-    }
-  });
-}
-*/
-
-/*
-function CreateAccount() {
-  log.debug("CreateAccount!!!!");
-}
-*/
-
-/*
-function loadLogins() {
-  log.debug('loadLogins');
-  var promises = [];
-  // Services.logins.getAllLogins({})
-  var logins = Services.logins.getAllLogins({});
-  for (var i = 0; i < logins.length; i++) {
-    let login = logins[i];
-    var p = setupServer(login);
-    promises.push(p);
-  }
-
-  return Promise.all(promises);
-}
-*/
-/*
-function setupServer(login) {
-  return new Promise(function(resolve, reject) {
-    log.debug('setupServer');
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = 'document';
-    xhr.addEventListener('load', function(ev) {
-      /// TODO(rh): Replace this with specific request for current user principcal!
-      var currentUserPrincipal = xhr.response.querySelector('current-user-principal');
-      if(currentUserPrincipal) {
-        var path = currentUserPrincipal.textContent.trim();
-        loadCalendars(login, path).then(resolve);
-      }
-    });
-    xhr.open('PROPFIND', login.hostname, true, login.username, login.password);
-    /// Headers after open(), but before send()
-    xhr.setRequestHeader('Depth', '1');
-    xhr.setRequestHeader('Prefer', 'return-minimal');
-    xhr.send();
-  });
-}
-*/
-
-/*
-function loadCalendars(login, path) {
-  return new Promise(function(resolve, reject){
-    //log.debug('loadCalendars');
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = 'document';
-    xhr.addEventListener('load', function(ev) {
-      //log.debug('responseHeaders', xhr.getAllResponseHeaders())
-      parseCalendars(login, xhr.response).then(resolve);
-    });
-    xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
-    /// Headers after open(), but before send()
-    //xhr.setRequestHeader('Content-Type', 'text/xml; charset=UTF-8');
-    xhr.setRequestHeader('Depth', '1');
-    //xhr.setRequestHeader('Prefer', 'return-minimal');
-    //xhr.send('<?xml version="1.0" encoding="UTF-8"?><D:propfind xmlns:D="DAV:"><D:allprop/></D:propfind>');
-    xhr.send();
-  });
-}
-*/
-
-function loadCalendar(login, path) {
-  var xhr = new XMLHttpRequest();
-  //xhr.responseType = 'document';
-  xhr.addEventListener('load', function(ev) {
-    log.debug('responseHeaders', xhr.getAllResponseHeaders())
-    log.debug('response', xhr.responseText);
-  });
-  xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
-  xhr.setRequestHeader('Content-Type', 'text/xml; charset=UTF-8');
-  xhr.setRequestHeader('Depth', '0');
-  //xhr.send('<?xml version="1.0" encoding="UTF-8"?><D:propfind xmlns:D="DAV:"><D:allprop/></D:propfind>');
-  xhr.send('<?xml version="1.0" encoding="utf-8"?><x0:propfind xmlns:x1="http://calendarserver.org/ns/" xmlns:x0="DAV:" xmlns:x3="http://apple.com/ns/ical/" xmlns:x2="urn:ietf:params:xml:ns:caldav"><x0:prop><x1:getctag/><x0:displayname/><x2:calendar-description/><x3:calendar-color/><x3:calendar-order/><x0:resourcetype/><x2:calendar-free-busy-set/></x0:prop></x0:propfind>');
-}
-
-
-/*
-function parseCalendars(login, xml) {
-  let responses = xml.documentElement.querySelectorAll('response');
-
-  //var ns = new XMLSerializer();
-  //var ss= ns.serializeToString(xml);
-  //log.debug('parseCalendars', ss);
-
-  var tree = document.getElementById('calendar-tree-children');
-  for(var i=0;i<responses.length;i++) {
-    let response = responses[i];
-    let calendarElement = response.querySelector('calendar');
-    if(calendarElement != null) {
-      var calendarDisplayName = response.querySelector('displayname').textContent.trim();
-      var uri = response.querySelector('href').textContent.trim();
-
-      //log.debug('found calendar', uri);
-      //loadCalendar(login, uri);
-
-      calendars.set(uri, new Calendar(calendarDisplayName));
-      let treeitem = document.createElement('treeitem');
-      let treerow = document.createElement('treerow');
-      let treecell = document.createElement('treecell');
-      treecell.setAttribute('label', calendarDisplayName);
-      treerow.appendChild(treecell);
-      treeitem.appendChild(treerow);
-      tree.appendChild(treeitem);
-    }
-  }
-
-  //for(var key of calendars.keys()) {
-  //  refreshCalendar(login, key, calendars.get(key));
-  //}
-
-  var promises = [];
-  calendars.forEach(function(calendar, key) {
-    var p = refreshCalendar(login, key, calendar);
-    promises.push(p);
-  });
-  return Promise.all(promises);
-}
-*/
-
-/*
-function refreshCalendar(login, path, calendar) {
-  log.debug('refreshCalendar', path);
-  return new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = 'document';
-    xhr.addEventListener('load', function(ev) {
-      //log.debug('calendar loaded', calendar);
-      parseCalendarData(login, calendar, xhr.response).then(resolve);
-    });
-    xhr.addEventListener('error', function(ev) {
-      // log.error("Unable to refreshCalendar", path);
-    });
-    xhr.open('REPORT', login.hostname + path, true, login.username, login.password);
-    /// Headers after open(), but before send()
-    xhr.setRequestHeader('Depth', '1');
-    xhr.setRequestHeader('Prefer', 'return-minimal');
-    xhr.send('<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>');
-  });
-}
-*/
-
-/*
-function parseCalendarData(xml) {
-  // log.debug('parseCalendarData', arguments);
-  return new Promise(function(resolve, reject) {
-    let responses = xml.querySelectorAll('response');
-    //log.debug('parseCalendarData', [calendar.displayname, responses.length]);
-    for(var i=0;i<responses.length;i++) {
-      let response = responses[i];
-      var jcalData = ICAL.parse(response.querySelector('calendar-data').textContent.trim());
-      var vcalendar = new ICAL.Component(jcalData);
-      let href = response.querySelector('href').textContent.trim();
-      var item = new CalendarItem(href, vcalendar);
-      calendar.addItem(item);
-    }
-    resolve();
-  });
-}
-*/
-
-/*
-function parseXml(xml) {
-  switch(xml.documentElement.tagName.toLowerCase()) {
-    case "multistatus":
-      let responses = xml.documentElement.querySelectorAll('response propstat prop');
-      for(var i=0;i<responses.length;i++) {
-        let response = responses[i];
-        log.debug(response.querySelector('displayname').textContent);
-      }
-
-    break;
-  }
-}
-*/
 
 function createCalendarXUL() {
   let timeslotsLabelsElement = document.getElementById('timeslots-labels');
@@ -454,40 +225,19 @@ function init() {
           treeitem.appendChild(treerow);
           tree.appendChild(treeitem);
 
-          _promises.push(calendar.refresh());/*.then(function(items) {
-            log.debug('calendar refreshed', items.size);
-          });*/
+          _promises.push(calendar.refresh());
         });
       }
 
       Promise.all(_promises).then(displayCalendars);
-
-      /// Loop through accounts and calendars
-      ///
-      /*
-      let treeitem = document.createElement('treeitem');
-      let treerow = document.createElement('treerow');
-      let treecell = document.createElement('treecell');
-      treecell.setAttribute('label', calendarDisplayName);
-      treerow.appendChild(treecell);
-      treeitem.appendChild(treerow);
-      tree.appendChild(treeitem);
-      */
     }
+  });
 
-    // log.debug('ACCOUNTS READY!!!!!', accounts.accounts);
-  });
-  /*
-  checkAccounts().then(displayCalendars).catch(function(err) {
-    log.error('Error in init', err);
-  });
-  */
+  /// Setup button-click event for account manager dialog
   var accountButton = document.getElementById('calendar-accounts');
   accountButton.addEventListener('click', function(ev) {
-    // ev.preventDefault()
     openDialog('chrome://boltning/content/AccountManagerDialog.xul');
   });
-  //displayCalendars();
 }
 
 function displayCalendars() {
@@ -512,13 +262,6 @@ function displayCalendars() {
         }
       });
 
-
-      // log.debug('items', items);
-      // log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
-
-      //log.debug('startOfWeek', startOfWeek);
-      //log.debug('endOfWeek', endOfWeek);
-
       items.forEach((item, _) => {
         if(item.event.startDate.isDate && item.event.endDate.isDate) {
           var startDate = item.event.startDate;
@@ -541,17 +284,11 @@ function displayCalendars() {
           }
           var duration = diffDuration.days+diffDuration.weeks*7;
 
-          //log.debug('event', [item.event.summary, startDate, endDate, duration]);
-          //return;
-
-          /// All day event!
-
           var diffStart = startDate.subtractDate(startOfWeek);
           var daysFromStart = diffStart.days;
           var daysToEnd = 7 - daysFromStart - duration;
 
           //log.debug('event', [item.event.summary, startDate, endDate, duration]);
-
           //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
           //log.debug('event.vcalendar', item.vcalendar);
 
@@ -579,12 +316,8 @@ function displayCalendars() {
           var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
 
           var diffEvent = item.event.endDate.subtractDate(item.event.startDate);
-          /// This is equal to the column!
 
           //log.debug('event', [item.event.summary, diffStartDays]);
-
-          /// get correct column and
-          // var dayColumnElement = document.getElementById('calendar-monday');
 
           let stackElement = document.createElement('stack');
           stackElement.setAttribute('flex', '1');
@@ -616,90 +349,25 @@ window.addEventListener("load", function(e) {
   tabmail.registerTabType(calendarTabType);
   tabmail.registerTabMonitor(calendarTabMonitor);
   tabmail.openTab("boltningcalendar", {background: true});
-  /// TODO(rh): Start thread via Services.tm
-  /// https://developer.mozilla.org/en-US/docs/The_Thread_Manager
-  //var syncThread1 = Services.tm.newThread(0);
-  //var syncThread2 = Services.tm.newThread(0);
-  //log.debug("syncThread:", [syncThread1, syncThread2, syncThread1==syncThread2]);
-  /*
-  var worker = new Worker("resource://boltning/worker.js");
-  log.debug(worker);
-  worker.onmessage = function(e) {
-    //result.textContent = e.data;
-    log.debug('Message received from worker', e.data);
-  }
 
-  worker.onerror = function(e) {
-    log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
-  }
-  */
-
-  /// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIRunnable
-
-  //var myLoginManager = Components.classes["@mozilla.org/login-manager;1"].getService(Components.interfaces.nsILoginManager);
-
-  /*
-
-  var logins = myLoginManager.getAllLogins({});
-  if(logins.length == 0) {
-    aConsoleService.logStringMessage("No accounts found :(");
-    //var loginInfo = new nsLoginInfo(hostname, formSubmitURL, httprealm, username, password, usernameField, passwordField);
-    var loginInfo = new nsLoginInfo('chrome://boltning', null, 'CalDAV Calendar', 'hartung', '123456', '', ''); // PW?
-    myLoginManager.addLogin(loginInfo);
-  } else {
-    // Simple Array[nsLoginInfo]
-    //aConsoleService.logStringMessage("Accounts found? :)"+JSON.stringify(logins));
-  }
-  */
-
-
-  //Services.core.init();
   var interval;
   interval = window.setInterval(function() {
     if(Services.core.initialized) {
       window.clearInterval(interval);
-
       init();
-
-
-      // var categoryManager = Components.classes["@mozilla.org/categorymanager;1"].getService(Components.interfaces.nsICategoryManager);
-      // categoryManager.addCategoryEnty("protocol", "caldav", "boltning.proto.caldav", false /*must be false*/, true);
-      // Services.logins.removeAllLogins();
-
-      /*
-      log.debug("Core initialized");
-      try {
-        var x = Services.core.getProtocolById("caldav");
-        log.debug(x);
-        var y = Services.core.getProtocols();
-        log.debug(y);
-      } catch(err) {
-        log.error(err);
-      }
-      log.debug("done");
-      */
-      //var proto = Components.classes[cid].createInstance(Ci.prplIProtocol);
-      //log.debug(proto);
-      //log.info(Services.core.getProtocols()); // ('caldav')
-      //log.debug(Services.accounts);
-      // log.debug(Services.logins.getAllLogins({}));
     }
   }, 100);
-  //
-
-  //Services.accounts.createAccount("someuser", "someid");
-
-
-  // openDialog('chrome://boltning/content/dialog.xul');
-  // openDialog('chrome://boltning/content/wizard.xul');
 }, false);
 
-window.addEventListener("load", function(e) {
-  var interval;
-  interval = window.setInterval(function() {
-    if(Services.core.initialized) {
-      window.clearInterval(interval);
-      //log.debug('logins', Services.logins.getAllLogins({}));
-    }
-  }, 100);
-});
+/*
+var worker = new Worker("resource://boltning/worker.js");
+log.debug(worker);
+worker.onmessage = function(e) {
+  //result.textContent = e.data;
+  log.debug('Message received from worker', e.data);
+}
+
+worker.onerror = function(e) {
+  log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
+}
+*/
