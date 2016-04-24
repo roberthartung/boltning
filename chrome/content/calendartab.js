@@ -10,11 +10,12 @@ let log = Log.repository.getLogger("boltning.calendartab");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
 
-const { require } = Components.utils.import("resource://gre/modules/commonjs/toolkit/require.js", {})
-var notifications = require("sdk/notifications");
+const { require } = Components.utils.import("resource://gre/modules/commonjs/toolkit/require.js", {});
+//var notifications = require("sdk/notifications");
 //Components.utils.import("resource://gre/modules/PopupNotifications.jsm");
 //log.debug('notifications', typeof notifications);
 
+/*
 notifications.notify({
   title: "Jabberwocky",
   text: "'Twas brillig, and the slithy toves",
@@ -24,6 +25,7 @@ notifications.notify({
     // console.log(this.data) would produce the same result.
   }
 });
+*/
 
 const WEEKSTART = ICAL.Time.MONDAY;
 var calendars = new Map();
@@ -39,6 +41,7 @@ endOfWeek.addDuration(new ICAL.Duration({days: 1}));
 // log.debug('startOfWeek', startOfWeek);
 // log.debug('endOfWeek', endOfWeek);
 
+/*
 function Calendar(displayname) {
   this.displayname = displayname;
   this.items = new Map();
@@ -47,79 +50,10 @@ function Calendar(displayname) {
 Calendar.prototype.addItem = function(item) {
   this.items.set(item.path, item);
 }
-
-function CalendarItem(path, vcalendar) {
-  // log.debug(path);
-  this.path = path;
-  this.vcalendar = vcalendar;
+*/
 
 
-
-  /// TODO(rh): We initially check if this has got a single event, if so, we can
-  /// reduce computational power
-
-  this.vevents = this.vcalendar.getAllSubcomponents('vevent');
-
-  /*
-  if(path === '/caldav.php/hartung/Raum%20105/63b6aa57-ab8c-465f-a528-4cde0f405aaa.ics') {
-    log.debug('FOUND Android Lab Event!!!', this.vevents);
-  }
-  */
-
-  if(this.vevents.length == 1) {
-    this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
-    this.summary = this.vevent.getFirstPropertyValue('summary');
-    this.event = new ICAL.Event(this.vevent);
-  } else if(this.vevents.length > 1) {
-    this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
-    this.summary = this.vevent.getFirstPropertyValue('summary');
-    this.event = new ICAL.Event(this.vevent);
-
-    log.warn('More than 1 event', this.event.summary);
-    /// Assumption is that the first event is recurring, and the other events
-    /// are the refinements of occurences.
-
-    /// 1. -> Test if first event is recurring
-    try {
-      if(!this.event.isRecurring()) {
-        throw new Error("Event is not recurring");
-      }
-    } catch(e) {
-        log.error(e.message, vcalendar);
-    }
-
-    /*
-    this.vevent = this.vevents[this.vevents.length-1];//
-    this.summary = this.vevent.getFirstPropertyValue('summary');
-    this.event = new ICAL.Event(this.vevent);
-
-    */
-  } else {
-    log.error("No events for item!", vcalendar);
-  }
-
-  /*
-  vcalendar.getAllSubcomponents('vevent').forEach((vevent, _) => {
-    var event = new ICAL.Event(vevent);
-    if(event.isRecurring()) {
-      //log.debug('recurring vevent', event);
-      var it = event.iterator();
-
-      var occ;
-      while((occ = it.next()) && occ.compare(endOfWeek) == -1) {
-        if(occ.compare(startOfWeek) != -1) {
-          var details = event.getOccurrenceDetails(occ);
-          log.debug('getOccurrenceDetails', details.item.summary);
-        }
-      }
-    } else {
-      /// ...
-      log.debug('CalendarItem.event', event);
-    }
-  });
-  */
-}
-
+/*
 /// Checks if the calendar is interesting for the date range. Following
 /// cases can be identified:
 ///
@@ -135,70 +69,7 @@ function CalendarItem(path, vcalendar) {
 function checkRecurringEventForRelevance(event, start, end) {
 
 }
-
-CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
-  /// One single event -> directly parsable!
-  if(this.event != undefined) {
-    if(this.event.isRecurring()) {
-      return checkRecurringEventForRelevance(this.event, start, end);
-    } else {
-      let cmp = DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
-      /*
-      if(this.summary == 'Android Lab') {
-        log.debug('Android Lab', [this.event.startDate, this.event.endDate, start, end, cmp]);
-      }
-      */
-      return cmp;
-    }
-  } else {
-
-  }
-
-  if(this.event.isRecurring()) {
-    var it = this.event.iterator();
-    var occ;
-    while((occ = it.next()) && occ.compare(end) == -1) {
-      if(occ.compare(start) != -1) {
-        var details = this.event.getOccurrenceDetails(occ);
-        var cmp = DateTimeUtility.compareRangesByDate(details.startDate, details.endDate, start, end);
-        log.debug('getOccurrenceDetails', [details.item.summary, cmp, details.startDate, details.endDate]);
-        if(cmp) {
-          log.debug('occurence found', [details.item]);
-          this.event = details.item;
-          /// TODO(rh): HACK
-          this.event.startDate = details.startDate;
-          this.event.endDate = details.endDate;
-          return cmp;
-        }
-      }
-    }
-
-    // return DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
-
-    return false;
-  }
-
-  /*
-  let compareStartStart = this.event.startDate.compare(start);
-  let compareStartEnd = this.event.startDate.compare(end);
-  let compareEndStart = this.event.endDate.compare(start);
-  let compareEndEnd = this.event.endDate.compare(end);
-
-  /// if start is smaller or end is greater -> no intereset
-  /// This handles cases 5) and 6)
-  if(compareStartEnd != -1 || compareEndStart != 1) {
-    return false;
-  }
-
-  return true;
-  */
-  /*
-  log.debug('compareStartStart', [compareStartStart, this.event.startDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
-  log.debug('compareStartEnd', [compareStartEnd, this.event.startDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
-  log.debug('compareEndStart', [compareEndStart, this.event.endDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
-  log.debug('compareEndEnd', [compareEndEnd, this.event.endDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
-  */
-}
+*/
 
 var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1", Ci.nsILoginInfo, "init");
 
@@ -287,23 +158,28 @@ var calendarTabType = {
   }
 };
 
+/*
 function checkAccounts() {
   return new Promise(function(resolve, reject) {
     var numLogins = Services.logins.countLogins("", null, "");
     if(numLogins === 0) {
       var win = openDialog('chrome://boltning/content/AddAccount.xul');
-      log.debug("dialog:", win);
+      //log.debug("dialog:", win);
       reject(new Error("No accounts found!"));
     } else {
       loadLogins().then(resolve);
     }
   });
 }
+*/
 
+/*
 function CreateAccount() {
   log.debug("CreateAccount!!!!");
 }
+*/
 
+/*
 function loadLogins() {
   log.debug('loadLogins');
   var promises = [];
@@ -317,7 +193,8 @@ function loadLogins() {
 
   return Promise.all(promises);
 }
-
+*/
+/*
 function setupServer(login) {
   return new Promise(function(resolve, reject) {
     log.debug('setupServer');
@@ -338,14 +215,16 @@ function setupServer(login) {
     xhr.send();
   });
 }
+*/
 
+/*
 function loadCalendars(login, path) {
   return new Promise(function(resolve, reject){
     //log.debug('loadCalendars');
     var xhr = new XMLHttpRequest();
     xhr.responseType = 'document';
     xhr.addEventListener('load', function(ev) {
-      log.debug('responseHeaders', xhr.getAllResponseHeaders())
+      //log.debug('responseHeaders', xhr.getAllResponseHeaders())
       parseCalendars(login, xhr.response).then(resolve);
     });
     xhr.open('PROPFIND', login.hostname+path, true, login.username, login.password);
@@ -357,6 +236,7 @@ function loadCalendars(login, path) {
     xhr.send();
   });
 }
+*/
 
 function loadCalendar(login, path) {
   var xhr = new XMLHttpRequest();
@@ -372,12 +252,15 @@ function loadCalendar(login, path) {
   xhr.send('<?xml version="1.0" encoding="utf-8"?><x0:propfind xmlns:x1="http://calendarserver.org/ns/" xmlns:x0="DAV:" xmlns:x3="http://apple.com/ns/ical/" xmlns:x2="urn:ietf:params:xml:ns:caldav"><x0:prop><x1:getctag/><x0:displayname/><x2:calendar-description/><x3:calendar-color/><x3:calendar-order/><x0:resourcetype/><x2:calendar-free-busy-set/></x0:prop></x0:propfind>');
 }
 
+
+/*
 function parseCalendars(login, xml) {
   let responses = xml.documentElement.querySelectorAll('response');
 
   //var ns = new XMLSerializer();
   //var ss= ns.serializeToString(xml);
   //log.debug('parseCalendars', ss);
+
   var tree = document.getElementById('calendar-tree-children');
   for(var i=0;i<responses.length;i++) {
     let response = responses[i];
@@ -399,11 +282,11 @@ function parseCalendars(login, xml) {
       tree.appendChild(treeitem);
     }
   }
-  /*
-  for(var key of calendars.keys()) {
-    refreshCalendar(login, key, calendars.get(key));
-  }
-  */
+
+  //for(var key of calendars.keys()) {
+  //  refreshCalendar(login, key, calendars.get(key));
+  //}
+
   var promises = [];
   calendars.forEach(function(calendar, key) {
     var p = refreshCalendar(login, key, calendar);
@@ -411,7 +294,9 @@ function parseCalendars(login, xml) {
   });
   return Promise.all(promises);
 }
+*/
 
+/*
 function refreshCalendar(login, path, calendar) {
   log.debug('refreshCalendar', path);
   return new Promise(function(resolve, reject) {
@@ -431,10 +316,11 @@ function refreshCalendar(login, path, calendar) {
     xhr.send('<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>');
   });
 }
+*/
 
-let offset = 0;
-
-function parseCalendarData(login, calendar, xml) {
+/*
+function parseCalendarData(xml) {
+  // log.debug('parseCalendarData', arguments);
   return new Promise(function(resolve, reject) {
     let responses = xml.querySelectorAll('response');
     //log.debug('parseCalendarData', [calendar.displayname, responses.length]);
@@ -449,6 +335,7 @@ function parseCalendarData(login, calendar, xml) {
     resolve();
   });
 }
+*/
 
 /*
 function parseXml(xml) {
@@ -541,10 +428,60 @@ function createCalendarColumn(id, label) {
 }
 
 function init() {
+  //Services.logins.removeAllLogins();
   createCalendarXUL();
+
+  let tree = document.getElementById('calendar-tree-children');
+
+  accounts.ready.then(function() {
+    // log.debug('accounts ready', accounts.accounts.length);
+    if(accounts.accounts.length == 0) {
+      var win = openDialog('chrome://boltning/content/AddAccount.xul');
+      log.debug("AddAccountDialogWindow", win);
+      // reject(new Error("No accounts found!"));
+    } else {
+      var _promises = [];
+      for(var a=0;a<accounts.accounts.length;a++) {
+        let account = accounts.accounts[a];
+        //log.debug('... account', account);
+        account.calendars.forEach(function(calendar, path) {
+          log.debug('... calendar', calendar);
+          let treeitem = document.createElement('treeitem');
+          let treerow = document.createElement('treerow');
+          let treecell = document.createElement('treecell');
+          treecell.setAttribute('label', calendar.displayname);
+          treerow.appendChild(treecell);
+          treeitem.appendChild(treerow);
+          tree.appendChild(treeitem);
+
+          _promises.push(calendar.refresh());/*.then(function(items) {
+            log.debug('calendar refreshed', items.size);
+          });*/
+        });
+      }
+
+      Promise.all(_promises).then(displayCalendars);
+
+      /// Loop through accounts and calendars
+      ///
+      /*
+      let treeitem = document.createElement('treeitem');
+      let treerow = document.createElement('treerow');
+      let treecell = document.createElement('treecell');
+      treecell.setAttribute('label', calendarDisplayName);
+      treerow.appendChild(treecell);
+      treeitem.appendChild(treerow);
+      tree.appendChild(treeitem);
+      */
+    }
+
+    // log.debug('ACCOUNTS READY!!!!!', accounts.accounts);
+  });
+  /*
   checkAccounts().then(displayCalendars).catch(function(err) {
     log.error('Error in init', err);
   });
+  */
   var accountButton = document.getElementById('calendar-accounts');
   accountButton.addEventListener('click', function(ev) {
     // ev.preventDefault()
@@ -554,116 +491,124 @@ function init() {
 }
 
 function displayCalendars() {
-  //log.debug('displayCalendars', calendars);
+  log.debug('displayCalendars');
 
   var columns = document.getElementById('calendar-columns');
   // document.querySelectorAll('#calendar-columns .calendar-column');
   columns = columns.querySelectorAll('.calendar-column');
 
-  calendars.forEach(function(calendar, _) {
-    var items = [];
-    calendar.items.forEach(function(item, _) {
-      //log.debug('item for ' + calendar.displayname, item.event.summary);
-      let cmp = item.checkRelevanceForChange(startOfWeek, endOfWeek);
-      if(cmp) {
-        log.debug('relevant item', [item.summary, cmp]);
-        items.push(item);
-      }
+  for(var a=0;a<accounts.accounts.length;a++) {
+    let account = accounts.accounts[a];
+    account.calendars.forEach(function(calendar, path) {
+
+
+      var items = [];
+      calendar.items.forEach(function(item, _) {
+        //log.debug('item for ' + calendar.displayname, item.event.summary);
+        let cmp = item.checkRelevanceForChange(startOfWeek, endOfWeek);
+        if(cmp) {
+          log.debug('relevant item', [item.summary, cmp]);
+          items.push(item);
+        }
+      });
+
+
+      // log.debug('items', items);
+      // log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
+
+      //log.debug('startOfWeek', startOfWeek);
+      //log.debug('endOfWeek', endOfWeek);
+
+      items.forEach((item, _) => {
+        if(item.event.startDate.isDate && item.event.endDate.isDate) {
+          var startDate = item.event.startDate;
+          var endDate = item.event.endDate;
+
+          /// Only if it is not larger!
+          if(startDate.compare(startOfWeek) != 1) {
+            startDate = startOfWeek;
+          }
+
+          /// Only if it is not smaller!
+          if(endDate.compare(endOfWeek) != -1) {
+            endDate = endOfWeek;
+          }
+
+          var diffDuration = endDate.subtractDate(startDate);
+          if(diffDuration.isNegative) {
+            log.error("diffDuration: NEGATIVE!", item);
+            throw "Expected duration of an event to be positive (e.g. start < end!)";
+          }
+          var duration = diffDuration.days+diffDuration.weeks*7;
+
+          //log.debug('event', [item.event.summary, startDate, endDate, duration]);
+          //return;
+
+          /// All day event!
+
+          var diffStart = startDate.subtractDate(startOfWeek);
+          var daysFromStart = diffStart.days;
+          var daysToEnd = 7 - daysFromStart - duration;
+
+          //log.debug('event', [item.event.summary, startDate, endDate, duration]);
+
+          //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
+          //log.debug('event.vcalendar', item.vcalendar);
+
+          var element = document.createElement('alldayevent');
+          element.setAttribute('flex', '1');
+          element.setAttribute('skip', ''+daysFromStart);
+          element.setAttribute('length', ''+duration);
+          element.setAttribute('fill', ''+daysToEnd);
+          element.setAttribute('value', item.event.summary);
+
+          var labelElement = document.createElement('label');
+          labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
+          labelElement.setAttribute('class', 'plain');
+          labelElement.setAttribute('flex', '1');
+          labelElement.style.backgroundColor = calendar.color;
+          element.appendChild(labelElement);
+
+          var calendarAlldayElement = document.getElementById('calendar-allday');
+          calendarAlldayElement.appendChild(element);
+        } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
+          /// Step 1: Find correct column!
+
+          var diffToStartOfWeek = item.event.startDate.subtractDate(startOfWeek);
+
+          var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
+
+          var diffEvent = item.event.endDate.subtractDate(item.event.startDate);
+          /// This is equal to the column!
+
+          //log.debug('event', [item.event.summary, diffStartDays]);
+
+          /// get correct column and
+          // var dayColumnElement = document.getElementById('calendar-monday');
+
+          let stackElement = document.createElement('stack');
+          stackElement.setAttribute('flex', '1');
+
+          let xe = document.createElement('description');
+          xe.appendChild(document.createTextNode(item.event.summary));
+          xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100));
+          xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
+          // xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
+          xe.style.backgroundColor = calendar.color;
+
+
+          stackElement.appendChild(xe);
+
+          columns[diffStartDays].appendChild(stackElement);
+          // dayColumnElement.appendChild(stackElement);
+        } else {
+          throw "One of startDate / endDate is a date, but the other one is a time!";
+        }
+      });
+
+
     });
-
-
-    // log.debug('items', items);
-    // log.debug('displayCalendars'+_, [calendar.items.size, items.length]);
-
-    //log.debug('startOfWeek', startOfWeek);
-    //log.debug('endOfWeek', endOfWeek);
-
-    items.forEach((item, _) => {
-      if(item.event.startDate.isDate && item.event.endDate.isDate) {
-        var startDate = item.event.startDate;
-        var endDate = item.event.endDate;
-
-        /// Only if it is not larger!
-        if(startDate.compare(startOfWeek) != 1) {
-          startDate = startOfWeek;
-        }
-
-        /// Only if it is not smaller!
-        if(endDate.compare(endOfWeek) != -1) {
-          endDate = endOfWeek;
-        }
-
-        var diffDuration = endDate.subtractDate(startDate);
-        if(diffDuration.isNegative) {
-          log.error("diffDuration: NEGATIVE!", item);
-          throw "Expected duration of an event to be positive (e.g. start < end!)";
-        }
-        var duration = diffDuration.days+diffDuration.weeks*7;
-
-        //log.debug('event', [item.event.summary, startDate, endDate, duration]);
-        //return;
-
-        /// All day event!
-
-        var diffStart = startDate.subtractDate(startOfWeek);
-        var daysFromStart = diffStart.days;
-        var daysToEnd = 7 - daysFromStart - duration;
-
-        //log.debug('event', [item.event.summary, startDate, endDate, duration]);
-
-        //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
-        //log.debug('event.vcalendar', item.vcalendar);
-
-        var element = document.createElement('alldayevent');
-        element.setAttribute('flex', '1');
-        element.setAttribute('skip', ''+daysFromStart);
-        element.setAttribute('length', ''+duration);
-        element.setAttribute('fill', ''+daysToEnd);
-        element.setAttribute('value', item.event.summary);
-
-        var labelElement = document.createElement('label');
-        labelElement.appendChild(document.createTextNode(item.event.summary.trim()));
-        labelElement.setAttribute('class', 'plain');
-        labelElement.setAttribute('flex', '1');
-        labelElement.style.backgroundColor = 'red';
-        element.appendChild(labelElement);
-
-        var calendarAlldayElement = document.getElementById('calendar-allday');
-        calendarAlldayElement.appendChild(element);
-      } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
-        /// Step 1: Find correct column!
-
-        var diffToStartOfWeek = item.event.startDate.subtractDate(startOfWeek);
-
-        var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
-
-        var diffEvent = item.event.endDate.subtractDate(item.event.startDate);
-        /// This is equal to the column!
-
-        //log.debug('event', [item.event.summary, diffStartDays]);
-
-        /// get correct column and
-        // var dayColumnElement = document.getElementById('calendar-monday');
-
-        let stackElement = document.createElement('stack');
-        stackElement.setAttribute('flex', '1');
-
-        let xe = document.createElement('description');
-        xe.appendChild(document.createTextNode(item.event.summary));
-        xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100));
-        xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
-        xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
-
-
-        stackElement.appendChild(xe);
-
-        columns[diffStartDays].appendChild(stackElement);
-        // dayColumnElement.appendChild(stackElement);
-      } else {
-        throw "One of startDate / endDate is a date, but the other one is a time!";
-      }
-    });
-  });
+  }
 }
 
 window.addEventListener("load", function(e) {
