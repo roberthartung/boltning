@@ -65,7 +65,7 @@
           </tabs>
           <tabpanels flex="1">
             <tabpanel>
-              <calendar-monthview flex="1">
+              <calendar-monthview id="calendar-monthview" flex="1">
                 <label flex="1" class="plain header">Monday</label>
                 <label flex="1" class="plain header">Tuesday</label>
                 <label flex="1" class="plain header">Wednesday</label>
@@ -82,52 +82,7 @@
                 <column flex="1"/>
                 <column flex="1"/>
 
-                <row flex="1">
-                  <box><label value="28" class="plain header" flex="1"/></box>
-                  <box><label value="29" class="plain header" flex="1"/></box>
-                  <box><label value="30" class="plain header" flex="1"/></box>
-                  <box><label value="31" class="plain header" flex="1"/></box>
-                  <box><label value="01" class="plain header" flex="1"/></box>
-                  <box><label value="02" class="plain header" flex="1"/></box>
-                  <box><label value="03" class="plain header" flex="1"/></box>
-                </row>
-                <row flex="1">
-                  <box><label value="04" class="plain header" flex="1"/></box>
-                  <box><label value="05" class="plain header" flex="1"/></box>
-                  <box><label value="06" class="plain header" flex="1"/></box>
-                  <box><label value="07" class="plain header" flex="1"/></box>
-                  <box><label value="08" class="plain header" flex="1"/></box>
-                  <box><label value="09" class="plain header" flex="1"/></box>
-                  <box><label value="10" class="plain header" flex="1"/></box>
-                </row>
-                <row flex="1">
-                  <box><label value="11" class="plain header" flex="1"/></box>
-                  <box><label value="12" class="plain header" flex="1"/></box>
-                  <box><label value="13" class="plain header" flex="1"/></box>
-                  <box><label value="14" class="plain header" flex="1"/></box>
-                  <box><label value="15" class="plain header" flex="1"/></box>
-                  <box><label value="16" class="plain header" flex="1"/></box>
-                  <box><label value="17" class="plain header" flex="1"/></box>
-                </row>
-                <row flex="1">
-                  <box><label value="18" class="plain header" flex="1"/></box>
-                  <box><label value="19" class="plain header" flex="1"/></box>
-                  <box><label value="20" class="plain header" flex="1"/></box>
-                  <box><label value="21" class="plain header" flex="1"/></box>
-                  <box><label value="22" class="plain header" flex="1"/></box>
-                  <box><label value="23" class="plain header" flex="1"/></box>
-                  <box><label value="24" class="plain header" flex="1"/></box>
-                </row>
-                <row flex="1">
-                  <box><label value="25" class="plain header" flex="1"/></box>
-                  <box><label value="26" class="plain header" flex="1"/></box>
-                  <box><label value="27" class="plain header" flex="1"/></box>
-                  <box><label value="28" class="plain header" flex="1"/></box>
-                  <box><label value="29" class="plain header" flex="1"/></box>
-                  <box><label value="30" class="plain header" flex="1"/></box>
-                  <box><label value="01" class="plain header" flex="1"/></box>
-                </row>
-
+                <!--
                 <stack flex="1" orient="vertical">
                   <alldayevent skip="1" fill="1" length="5" top="20">
                     <label class="plain header" value="My Event? // 20" style="background-color: green;" flex="1"/>
@@ -164,6 +119,8 @@
                 <stack></stack>
                 <stack></stack>
                 <stack></stack>
+              -->
+
               </calendar-monthview>
             </tabpanel>
             <tabpanel>

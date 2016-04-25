@@ -30,6 +30,10 @@ notifications.notify({
 const WEEKSTART = ICAL.Time.MONDAY;
 var calendars = new Map();
 const now = ICAL.Time.now();
+
+const startOfMonth = now.startOfMonth();
+const endOfMonth = now.endOfMonth();
+
 /// This will be OK, as it is Monday 0:0:0
 const startOfWeek = now.startOfWeek(WEEKSTART);
 /// This is kind of OK, because it will be Sunday 0:0:0, in terms of date this
@@ -149,6 +153,58 @@ function createCalendarColumns() {
   createCalendarColumn('friday', 'Friday');
   createCalendarColumn('saturday', 'Saturday');
   createCalendarColumn('sunday', 'Sunday');
+
+  createMonthView();
+}
+
+const weeks = new Map();
+
+function createMonthView() {
+  let element = document.getElementById('calendar-monthview');
+  var firstDay = startOfMonth.startOfWeek(WEEKSTART);
+  /// TODO(rh): Always display 6 full weeks (in case where 1st is on sunday,
+  /// and we got 31 days this is required)
+
+  var lastDay = endOfMonth.endOfWeek(WEEKSTART);
+  var current = firstDay.clone();
+  /// Iterate through weeks here!
+  while(current.compare(lastDay) == -1) {
+    let rowElement = document.createElement('row');
+    rowElement.setAttribute('flex', '1');
+    let stackElement = document.createElement('stack');
+    /// TODO(rh): Do we need these attributes?
+    stackElement.setAttribute('flex', '1');
+    stackElement.setAttribute('orient', 'vertical');
+
+    var weekNumber = current.weekNumber(WEEKSTART);
+    // log.debug('weeknumber', weekNumber);
+    weeks.set(weekNumber, {
+      stack: stackElement,
+      start: current.startOfWeek(WEEKSTART),
+      end: current.endOfWeek(WEEKSTART)
+    });
+
+    var day = current.clone();
+    for(var i=0;i<7;i++) {
+      let boxElement = document.createElement('box');
+      var labelElement = document.createElement('label');
+      var date = day.toJSDate();
+      var dayNumber = date.getDate();
+      if(dayNumber < 10) {
+        dayNumber = '0'+dayNumber;
+      }
+      labelElement.setAttribute('value', dayNumber);
+      labelElement.setAttribute('class', 'plain header');
+      labelElement.setAttribute('flex', '1');
+      boxElement.appendChild(labelElement);
+      rowElement.appendChild(boxElement);
+      day.adjust(1,0,0,0);
+    }
+
+    element.appendChild(rowElement);
+    //element.appendChild(stackElement);
+    current  = day;
+  }
 }
 
 function createCalendarColumn(id, label) {
@@ -216,7 +272,7 @@ function init() {
         let account = accounts.accounts[a];
         //log.debug('... account', account);
         account.calendars.forEach(function(calendar, path) {
-          log.debug('... calendar', calendar);
+          //log.debug('... calendar', calendar);
           let treeitem = document.createElement('treeitem');
           let treerow = document.createElement('treerow');
           let treecell = document.createElement('treecell');
@@ -240,14 +296,34 @@ function init() {
   });
 }
 
-function displayCalendars() {
-  log.debug('displayCalendars');
+function displayItemForWeek(weekInfo, item) {
 
+}
+
+function clampDates(event, start, end) {
+  var startDate = event.startDate;
+  var endDate = event.endDate;
+
+  /// Only if it is not larger!
+  if(startDate.compare(start) != 1) {
+    startDate = start;
+  }
+
+  /// Only if it is not smaller!
+  if(endDate.compare(end) != -1) {
+    endDate = end;
+  }
+
+  return [startDate, endDate];
+}
+
+function displayCalendars() {
   var columns = document.getElementById('calendar-columns');
   // document.querySelectorAll('#calendar-columns .calendar-column');
   columns = columns.querySelectorAll('.calendar-column');
 
   var alldayevents = new Map();
+  var weekevents = new Map();
 
   /// Durations from 1 to 7 days
   alldayevents.set(7, []);
@@ -258,24 +334,46 @@ function displayCalendars() {
   alldayevents.set(2, []);
   alldayevents.set(1, []);
 
+  weeks.forEach(function(weekInfo, weekNumber) {
+    var weekevents = new Map();
+    weekevents.set(7, []);
+    weekevents.set(6, []);
+    weekevents.set(5, []);
+    weekevents.set(4, []);
+    weekevents.set(3, []);
+    weekevents.set(2, []);
+    weekevents.set(1, []);
+    weekevents.set(weekNumber, weekevents);
+  });
+
   for(var a=0;a<accounts.accounts.length;a++) {
     let account = accounts.accounts[a];
     account.calendars.forEach(function(calendar, path) {
+      var events = [];
 
-      var items = [];
       calendar.items.forEach(function(item, _) {
+        weeks.forEach(function(weekInfo, weekNumber) {
+          let _events = item.checkRelevanceForRange(weekInfo.start, weekInfo.end);
+
+          if(_events) {
+            //displayItemForWeek(weekInfo, item);
+          }
+        });
+
         //log.debug('item for ' + calendar.displayname, item.event.summary);
-        let cmp = item.checkRelevanceForChange(startOfWeek, endOfWeek);
-        if(cmp) {
-          // log.debug('relevant item', [item.summary, cmp]);
-          items.push(item);
+        let _events = item.checkRelevanceForRange(startOfWeek, endOfWeek);
+        if(_events) {
+          /// TODO(rh): Add all events
+          events.push(_events[0]);
         }
       });
 
-      items.forEach((item, _) => {
-        if(item.event.startDate.isDate && item.event.endDate.isDate) {
-          var startDate = item.event.startDate;
-          var endDate = item.event.endDate;
+      events.forEach((event, _) => {
+        if(event.startDate.isDate && event.endDate.isDate) {
+          var [startDate, endDate] = clampDates(event, startOfWeek, endOfWeek);
+          /*
+          var startDate = event.startDate;
+          var endDate = event.endDate;
 
           /// Only if it is not larger!
           if(startDate.compare(startOfWeek) != 1) {
@@ -286,6 +384,7 @@ function displayCalendars() {
           if(endDate.compare(endOfWeek) != -1) {
             endDate = endOfWeek;
           }
+          */
 
           var diffDuration = endDate.subtractDate(startDate);
           if(diffDuration.isNegative) {
@@ -302,18 +401,18 @@ function displayCalendars() {
             daysFromStart: daysFromStart,
             daysToEnd: daysToEnd,
             duration: duration,
-            item: item,
+            event: event,
             calendar: calendar
           });
 
           //log.debug('event', [item.event.summary, startDate, endDate, duration]);
           //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
           //log.debug('event.vcalendar', item.vcalendar);
-        } else if(!item.event.startDate.isDate && !item.event.endDate.isDate) {
+        } else if(!event.startDate.isDate && !event.endDate.isDate) {
           /// Step 1: Find correct column!
-          var diffToStartOfWeek = item.event.startDate.subtractDate(startOfWeek);
+          var diffToStartOfWeek = event.startDate.subtractDate(startOfWeek);
           var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
-          var diffEvent = item.event.endDate.subtractDate(item.event.startDate);
+          var diffEvent = event.endDate.subtractDate(event.startDate);
 
           //log.debug('event', [item.event.summary, diffStartDays]);
 
@@ -321,7 +420,7 @@ function displayCalendars() {
           //stackElement.setAttribute('flex', '1');
 
           let xe = document.createElement('description');
-          xe.appendChild(document.createTextNode(item.event.summary));
+          xe.appendChild(document.createTextNode(event.summary));
           xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100+diffToStartOfWeek.minutes/60.0*100.0));
           xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
           // xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
@@ -337,7 +436,6 @@ function displayCalendars() {
       });
     });
   }
-
 
   var dailyOffsets = new Map();
 
@@ -381,9 +479,9 @@ function displayCalendars() {
       element.setAttribute('skip', ''+event.daysFromStart);
       element.setAttribute('length', ''+event.duration);
       element.setAttribute('fill', ''+event.daysToEnd);
-      element.setAttribute('value', event.item.event.summary);
+      element.setAttribute('value', event.event.summary);
       var labelElement = document.createElement('description');
-      labelElement.appendChild(document.createTextNode(event.item.event.summary.trim()));
+      labelElement.appendChild(document.createTextNode(event.event.summary.trim()));
       //labelElement.setAttribute('class', 'plain');
       labelElement.setAttribute('flex', '1');
       labelElement.style.backgroundColor = event.calendar.color;
