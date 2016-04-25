@@ -20,25 +20,10 @@ var XMLHttpRequest = Components.Constructor("@mozilla.org/xmlextras/xmlhttpreque
 var XMLSerializer = Components.Constructor("@mozilla.org/xmlextras/xmlserializer;1",
   "nsIDOMSerializer");
 
+const regexp_hexcolor_3digit = /^#([A-fa-f0-9]{1})([A-fa-f0-9]{1})([A-fa-f0-9]{1})$/;
+const regexp_hexcolor_6digit = /^#([A-fa-f0-9]{2})([A-fa-f0-9]{2})([A-fa-f0-9]{2})([A-fa-f0-9]{2})?$/;
+
 var EXPORTED_SYMBOLS = ["accounts"];
-
-/*
-/// Checks if the calendar is interesting for the date range. Following
-/// cases can be identified:
-///
-/// -----------------------------------------------------> Time, t
-///                   [s ############# e] <- event
-/// 1)             |s--------------------e|
-/// 2)                  |s-----------e|
-/// 3)             |s------------e|
-/// 4)                          |s-----------e|
-/// 5) -----e|
-/// 6)                                          |s------
-
-function checkRecurringEventForRelevance(event, start, end) {
-
-}
-*/
 
 function findPrincipcal(login) {
   return new Promise(function(resolve, reject) {
@@ -49,21 +34,8 @@ function findPrincipcal(login) {
         if(response.error) {
           reject(response);
         } else {
-          //var ns = new XMLSerializer();
-          //var ss= ns.serializeToString(response.contentElement);
-          //log.debug('Response', ss);
-
-          //log.debug('q1', response.contentElement.querySelector('current-user-principal').querySelector('href').textContent);
-          //log.debug('q2', response.contentElement.querySelector('href'));
-
-          // resolve(response.contentElement.querySelector('current-user-principal path'));
           resolve(response.contentElement.querySelector('current-user-principal').querySelector('href').textContent);
         }
-        /*
-        var ns = new XMLSerializer();
-        var ss= ns.serializeToString(response.xml);
-        log.debug('Response', ss);
-        */
       }
     });
   });
@@ -162,8 +134,9 @@ function CalendarItem(path, vcalendar) {
 }
 
 
-CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
+CalendarItem.prototype.checkRelevanceForRange = function(start, end) {
   /// One single event -> directly parsable!
+  var events = [];
   if(this.event != undefined) {
     if(this.event.isRecurring()) {
       var it = this.event.iterator();
@@ -172,64 +145,32 @@ CalendarItem.prototype.checkRelevanceForChange = function(start, end) {
         if(occ.compare(start) != -1) {
           var details = this.event.getOccurrenceDetails(occ);
           var cmp = DateTimeUtility.compareRangesByDate(details.startDate, details.endDate, start, end);
-          log.debug('getOccurrenceDetails', [details.item.summary, cmp, details.startDate, details.endDate]);
+          //log.debug('getOccurrenceDetails', [details.item.summary, cmp, details.startDate, details.endDate]);
           if(cmp) {
-            log.debug('occurence found', [details.item]);
-            this.event = details.item;
+            //log.debug('occurence found', [details.item]);
+            //this.event = details.item;
             /// TODO(rh): HACK
-            this.event.startDate = details.startDate;
-            this.event.endDate = details.endDate;
-            return cmp;
+            //this.event.startDate = details.startDate;
+            //this.event.endDate = details.endDate;
+            // return cmp;
+            events.push({event: this.event, summary: this.summary, startDate: details.startDate, endDate: details.endDate, cmp: cmp});
           }
         }
       }
-
       // return DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
-
-      return false;
+      //return false;
     } else {
       let cmp = DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
-      return cmp;
+      if(cmp) {
+        events.push({event: this.event, summary: this.summary, startDate: this.event.startDate, endDate: this.event.endDate, cmp: cmp});
+      }
     }
   } else {
     log.error('CalendarItem with more than 1 event. Ignoring.');
-    /// ...
-    /*
-    if(this.event.isRecurring()) {
-      // return checkRecurringEventForRelevance(this.event, start, end);
-      // -> TODO
-      return false;
-    } else {
-
-    }
-    */
-    return false;
   }
 
-  /*
-  let compareStartStart = this.event.startDate.compare(start);
-  let compareStartEnd = this.event.startDate.compare(end);
-  let compareEndStart = this.event.endDate.compare(start);
-  let compareEndEnd = this.event.endDate.compare(end);
-
-  /// if start is smaller or end is greater -> no intereset
-  /// This handles cases 5) and 6)
-  if(compareStartEnd != -1 || compareEndStart != 1) {
-    return false;
-  }
-
-  return true;
-  */
-  /*
-  log.debug('compareStartStart', [compareStartStart, this.event.startDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
-  log.debug('compareStartEnd', [compareStartEnd, this.event.startDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
-  log.debug('compareEndStart', [compareEndStart, this.event.endDate.toJSDate().toISOString(), start.toJSDate().toISOString()]);
-  log.debug('compareEndEnd', [compareEndEnd, this.event.endDate.toJSDate().toISOString(), end.toJSDate().toISOString()]);
-  */
+  return events.length == 0 ? false : events;
 }
-
-const regexp_hexcolor_3digit = /^#([A-fa-f0-9]{1})([A-fa-f0-9]{1})([A-fa-f0-9]{1})$/;
-const regexp_hexcolor_6digit = /^#([A-fa-f0-9]{2})([A-fa-f0-9]{2})([A-fa-f0-9]{2})([A-fa-f0-9]{2})?$/;
 
 function parseColor(txt) {
   var match = regexp_hexcolor_3digit.exec(txt);
@@ -259,8 +200,7 @@ function Calendar(account, href, xml) {
   }
   /// TODO(rh): Random color here or save in properties?
   //this.color =  ? colorElement.textContent : 'cyan';
-
-  log.debug('Calendar', [this.displayname, this.color]);
+  //log.debug('Calendar', [this.displayname, this.color]);
 }
 
 Calendar.prototype.refresh = function refresh() {
@@ -292,7 +232,7 @@ function Account(login) {
 
   function loadCalendars(principal_path) {
     return HttpCaldavRequest.propfind(login, principal_path, '<?xml version="1.0" encoding="utf-8"?><x0:propfind xmlns:x1="http://calendarserver.org/ns/" xmlns:x0="DAV:" xmlns:x3="http://apple.com/ns/ical/" xmlns:x2="urn:ietf:params:xml:ns:caldav"><x0:prop><x1:getctag/><x0:displayname/><x2:calendar-description/><x3:calendar-color/><x3:calendar-order/><x0:resourcetype/><x2:calendar-free-busy-set/></x0:prop></x0:propfind>', '1').then(function(responses) {
-      log.debug('Account.loadCalendars', responses);
+      //log.debug('Account.loadCalendars', responses);
       for(var r=0;r<responses.length;r++) {
         let response = responses[r];
         /// schedule-inbox/output
@@ -312,7 +252,7 @@ function Account(login) {
         }
       }
 
-      log.debug('Account.calendars', calendars.size);
+      //log.debug('Account.calendars', calendars.size);
     });
   }
 
