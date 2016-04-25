@@ -42,8 +42,8 @@ function findPrincipcal(login) {
 }
 
 
-function CalendarItem(path, vcalendar) {
-  // log.debug(path);
+function CalendarItem(calendar, path, vcalendar) {
+  this.calendar = calendar;
   this.path = path;
   this.vcalendar = vcalendar;
 
@@ -53,7 +53,6 @@ function CalendarItem(path, vcalendar) {
     this.vevent = this.vcalendar.getFirstSubcomponent('vevent');
     this.summary = this.vevent.getFirstPropertyValue('summary');
     this.event = new ICAL.Event(this.vevent);
-
     this.events = [this.event];
   } else if(this.vevents.length > 1) {
     this.events = [];
@@ -153,7 +152,7 @@ CalendarItem.prototype.checkRelevanceForRange = function(start, end) {
             //this.event.startDate = details.startDate;
             //this.event.endDate = details.endDate;
             // return cmp;
-            events.push({event: this.event, summary: this.summary, startDate: details.startDate, endDate: details.endDate, cmp: cmp});
+            events.push({event: this.event, summary: this.summary, startDate: details.startDate, endDate: details.endDate, cmp: cmp, calendar: this.calendar});
           }
         }
       }
@@ -162,7 +161,7 @@ CalendarItem.prototype.checkRelevanceForRange = function(start, end) {
     } else {
       let cmp = DateTimeUtility.compareRangesByDate(this.event.startDate, this.event.endDate, start, end);
       if(cmp) {
-        events.push({event: this.event, summary: this.summary, startDate: this.event.startDate, endDate: this.event.endDate, cmp: cmp});
+        events.push({event: this.event, summary: this.summary, startDate: this.event.startDate, endDate: this.event.endDate, cmp: cmp, calendar: this.calendar});
       }
     }
   } else {
@@ -206,6 +205,7 @@ function Calendar(account, href, xml) {
 Calendar.prototype.refresh = function refresh() {
   var items = new Map();
   this.items = items;
+  var _this = this;
 
   return HttpCaldavRequest.report(this.account.login, this.href, '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>', '1').then(function(responses) {
     for(var i=0;i<responses.length;i++) {
@@ -213,7 +213,7 @@ Calendar.prototype.refresh = function refresh() {
 
       var jcalData = ICAL.parse(response.contentElement.querySelector('calendar-data').textContent.trim());
       var vcalendar = new ICAL.Component(jcalData);
-      var item = new CalendarItem(response.href, vcalendar);
+      var item = new CalendarItem(_this, response.href, vcalendar);
       items.set(response.href, item);
       // calendar.addItem(item);
       //break;

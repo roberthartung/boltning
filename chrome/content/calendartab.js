@@ -169,14 +169,17 @@ function createMonthView() {
   var current = firstDay.clone();
   /// Iterate through weeks here!
   while(current.compare(lastDay) == -1) {
+    var weekNumber = current.weekNumber(WEEKSTART);
+
     let rowElement = document.createElement('row');
+
     rowElement.setAttribute('flex', '1');
     let stackElement = document.createElement('stack');
     /// TODO(rh): Do we need these attributes?
     stackElement.setAttribute('flex', '1');
     stackElement.setAttribute('orient', 'vertical');
+    stackElement.setAttribute('id', 'week-'+weekNumber);
 
-    var weekNumber = current.weekNumber(WEEKSTART);
     // log.debug('weeknumber', weekNumber);
     weeks.set(weekNumber, {
       stack: stackElement,
@@ -202,7 +205,7 @@ function createMonthView() {
     }
 
     element.appendChild(rowElement);
-    //element.appendChild(stackElement);
+    element.appendChild(stackElement);
     current  = day;
   }
 }
@@ -296,10 +299,6 @@ function init() {
   });
 }
 
-function displayItemForWeek(weekInfo, item) {
-
-}
-
 function clampDates(event, start, end) {
   var startDate = event.startDate;
   var endDate = event.endDate;
@@ -315,6 +314,130 @@ function clampDates(event, start, end) {
   }
 
   return [startDate, endDate];
+}
+
+function displayWeeks(weekevents) {
+  //log.debug('displayWeeks');
+  weeks.forEach(function(weekInfo, weekNumber) {
+    let events = weekevents.get(weekNumber);
+    // let stackElement = document.getElementById('week-'+weekNumber);
+    let stackElement = weekInfo.stack;
+    let map = mapEventsByDuration(events, weekInfo.start, weekInfo.end);
+    try {
+      displayWeek(map, stackElement);
+    } catch(err) {
+      log.error('error in displayweek', err.message);
+    }
+  });
+}
+
+function displayWeek(durationMap, containerElement) {
+  //log.debug('displayWeek', containerElement);
+  var dailyOffsets = new Map();
+
+  for(var i=0;i<7;i++) {
+    dailyOffsets.set(i, new Map());
+  }
+
+  // var offset = 0;
+  durationMap.forEach(function(events, duration) {
+    //log.debug('durationMap', [duration, events.length]);
+    events.forEach(function(event, _) {
+      var element = document.createElement('alldayevent');
+      /// We have to find a free slot, so the event fits in there!
+      var slot = 0;
+      while(true) {
+        /// By default the event fits into the slot for all days
+        var fits = true;
+        /// Loop over days and check if the slot really fits
+        for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
+          /// Get the map of slots for this day!
+          var day = dailyOffsets.get(d);
+          if(day.has(slot)) {
+            fits = false;
+            break;
+          }
+        }
+
+        if(fits) {
+          /// If it fits, reserve slot across all days
+          for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
+            var day = dailyOffsets.get(d);
+            day.set(slot, true);
+          }
+          break;
+        }
+        slot++;
+      }
+
+      // offset++;
+      element.setAttribute('top', 20+slot*20);
+      //element.setAttribute('flex', '1');
+      element.setAttribute('skip', ''+event.daysFromStart);
+      element.setAttribute('length', ''+event.duration);
+      element.setAttribute('fill', ''+event.daysToEnd);
+      element.setAttribute('crop', 'end');
+      element.setAttribute('wrap', 'off');
+
+      element.setAttribute('value', event.event.summary);
+      var labelElement = document.createElement('description');
+      labelElement.appendChild(document.createTextNode(event.event.summary.trim()));
+      //labelElement.setAttribute('class', 'plain');
+      labelElement.setAttribute('flex', '1');
+      labelElement.style.backgroundColor = event.event.calendar.color;
+      labelElement.setAttribute('maxheight', '18');
+      labelElement.setAttribute('crop', 'end');
+      labelElement.setAttribute('wrap', 'off');
+      //labelElement.setAttribute('style', 'cursor: pointer;');
+      element.appendChild(labelElement);
+
+      containerElement.appendChild(element);
+    });
+  });
+}
+
+function mapEventsByDuration(events, start, end) {
+  var durationMap = new Map();
+
+  durationMap.set(7, []);
+  durationMap.set(6, []);
+  durationMap.set(5, []);
+  durationMap.set(4, []);
+  durationMap.set(3, []);
+  durationMap.set(2, []);
+  durationMap.set(1, []);
+  durationMap.set(0, []); // possible, if less than 1 day (e.g. non one-day events)
+
+  log.debug('mapEventsByDuration...', [start, end, events.length]);
+
+  events.forEach(function(event, index) {
+    var [startDate, endDate] = clampDates(event, start, end);
+    //log.debug('clamping', [startDate, endDate]);
+
+    var diffDuration = endDate.subtractDate(startDate);
+    if(diffDuration.isNegative) {
+      log.error("diffDuration: NEGATIVE!", event);
+      throw new Error("Expected duration of an event to be positive (e.g. start < end!)");
+    }
+    var duration = diffDuration.days+diffDuration.weeks*7;
+    if(duration == 0) {
+      /// single-day event
+      duration = 1;
+    }
+
+    var diffStart = startDate.subtractDate(start);
+    var daysFromStart = diffStart.days;
+    var daysToEnd = 7 - daysFromStart - duration;
+
+    durationMap.get(duration).push({
+      daysFromStart: daysFromStart,
+      daysToEnd: daysToEnd,
+      duration: duration,
+      event: event
+    });
+  });
+
+  return durationMap;
 }
 
 function displayCalendars() {
@@ -335,35 +458,31 @@ function displayCalendars() {
   alldayevents.set(1, []);
 
   weeks.forEach(function(weekInfo, weekNumber) {
-    var weekevents = new Map();
-    weekevents.set(7, []);
-    weekevents.set(6, []);
-    weekevents.set(5, []);
-    weekevents.set(4, []);
-    weekevents.set(3, []);
-    weekevents.set(2, []);
-    weekevents.set(1, []);
-    weekevents.set(weekNumber, weekevents);
+    weekevents.set(weekNumber, new Array());
   });
 
+  // log.debug('weekevents', weekevents.size);
   for(var a=0;a<accounts.accounts.length;a++) {
     let account = accounts.accounts[a];
     account.calendars.forEach(function(calendar, path) {
       var events = [];
 
+      /// Loop through all items for the calendar
       calendar.items.forEach(function(item, _) {
+        /// TODO(rh): Don't check redundantly for each week
+
+        /// 1.) Check if this item is relevant for the weeks
         weeks.forEach(function(weekInfo, weekNumber) {
           let _events = item.checkRelevanceForRange(weekInfo.start, weekInfo.end);
-
           if(_events) {
-            //displayItemForWeek(weekInfo, item);
+            // log.debug('Item matches week', [weekNumber, _events[0].summary]);
+            weekevents.get(weekNumber).push(_events[0]);
           }
         });
 
-        //log.debug('item for ' + calendar.displayname, item.event.summary);
+        /// 2.) check for current week
         let _events = item.checkRelevanceForRange(startOfWeek, endOfWeek);
         if(_events) {
-          /// TODO(rh): Add all events
           events.push(_events[0]);
         }
       });
@@ -371,6 +490,7 @@ function displayCalendars() {
       events.forEach((event, _) => {
         if(event.startDate.isDate && event.endDate.isDate) {
           var [startDate, endDate] = clampDates(event, startOfWeek, endOfWeek);
+
           /*
           var startDate = event.startDate;
           var endDate = event.endDate;
@@ -388,7 +508,7 @@ function displayCalendars() {
 
           var diffDuration = endDate.subtractDate(startDate);
           if(diffDuration.isNegative) {
-            log.error("diffDuration: NEGATIVE!", item);
+            log.error("diffDuration: NEGATIVE!", event);
             throw "Expected duration of an event to be positive (e.g. start < end!)";
           }
           var duration = diffDuration.days+diffDuration.weeks*7;
@@ -404,10 +524,6 @@ function displayCalendars() {
             event: event,
             calendar: calendar
           });
-
-          //log.debug('event', [item.event.summary, startDate, endDate, duration]);
-          //log.debug('event', [item.event.summary, daysFromStart, daysToEnd, item.event.startDate, item.event.endDate]);
-          //log.debug('event.vcalendar', item.vcalendar);
         } else if(!event.startDate.isDate && !event.endDate.isDate) {
           /// Step 1: Find correct column!
           var diffToStartOfWeek = event.startDate.subtractDate(startOfWeek);
@@ -436,6 +552,8 @@ function displayCalendars() {
       });
     });
   }
+
+  displayWeeks(weekevents);
 
   var dailyOffsets = new Map();
 
@@ -484,7 +602,7 @@ function displayCalendars() {
       labelElement.appendChild(document.createTextNode(event.event.summary.trim()));
       //labelElement.setAttribute('class', 'plain');
       labelElement.setAttribute('flex', '1');
-      labelElement.style.backgroundColor = event.calendar.color;
+      labelElement.style.backgroundColor = event.event.calendar.color;
       element.appendChild(labelElement);
 
       var calendarAlldayElement = document.getElementById('calendar-allday');
