@@ -13,6 +13,12 @@ var XMLHttpRequest = Components.Constructor("@mozilla.org/xmlextras/xmlhttpreque
 var XMLSerializer = Components.Constructor("@mozilla.org/xmlextras/xmlserializer;1",
   "nsIDOMSerializer");
 
+/*
+var ns = new XMLSerializer();
+var ss= ns.serializeToString(response.xml);
+log.debug('Response', ss);
+*/
+
 var DateTimeUtility = {
   COMPARE_SMALLER: -1,
   COMPARE_EQUAL: 0,
