@@ -375,24 +375,7 @@ function findFreeSlot(slots, dailyOffsets, event) {
   // return slot;
 }
 
-function displayWeek(durationMap, containerElement) {
-  var dailyOffsets = new Map();
-
-  for(var i=0;i<7;i++) {
-    dailyOffsets.set(i, new Map());
-  }
-
-  var slots = new Map();
-
-  // var offset = 0;
-  durationMap.forEach(function(events, duration) {
-    events.forEach(function(event, _) {
-      //var element = document.createElement('alldayevent');
-      /// We have to find a free slot, so the event fits in there!
-      findFreeSlot(slots, dailyOffsets, event);
-    });
-  });
-
+function mergeSlots(slots) {
   /// merge slots here
   slots.forEach(function(obj, slot) {
     var el = undefined;
@@ -412,6 +395,27 @@ function displayWeek(durationMap, containerElement) {
     /// This is not working.
     obj.push(...newObj);
   });
+}
+
+function displayWeek(durationMap, containerElement) {
+  var dailyOffsets = new Map();
+
+  for(var i=0;i<7;i++) {
+    dailyOffsets.set(i, new Map());
+  }
+
+  var slots = new Map();
+
+  // var offset = 0;
+  durationMap.forEach(function(events, duration) {
+    events.forEach(function(event, _) {
+      //var element = document.createElement('alldayevent');
+      /// We have to find a free slot, so the event fits in there!
+      findFreeSlot(slots, dailyOffsets, event);
+    });
+  });
+
+  mergeSlots(slots);
 
   slots.forEach(function(obj, slot) {
     var gridElement = document.createElement('grid');
@@ -550,21 +554,6 @@ function displayCalendars() {
         if(event.startDate.isDate && event.endDate.isDate) {
           var [startDate, endDate] = clampDates(event, startOfWeek, endOfWeek);
 
-          /*
-          var startDate = event.startDate;
-          var endDate = event.endDate;
-
-          /// Only if it is not larger!
-          if(startDate.compare(startOfWeek) != 1) {
-            startDate = startOfWeek;
-          }
-
-          /// Only if it is not smaller!
-          if(endDate.compare(endOfWeek) != -1) {
-            endDate = endOfWeek;
-          }
-          */
-
           var diffDuration = endDate.subtractDate(startDate);
           if(diffDuration.isNegative) {
             log.error("diffDuration: NEGATIVE!", event);
@@ -620,54 +609,8 @@ function displayCalendars() {
     dailyOffsets.set(i, new Map());
   }
 
-  // var offset = 0;
-  alldayevents.forEach(function(events, duration) {
-    events.forEach(function(event, _) {
-      var element = document.createElement('alldayevent');
-      /// We have to find a free slot, so the event fits in there!
-      var slot = 0;
-      while(true) {
-        /// By default the event fits into the slot for all days
-        var fits = true;
-        /// Loop over days and check if the slot really fits
-        for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
-          /// Get the map of slots for this day!
-          var day = dailyOffsets.get(d);
-          if(day.has(slot)) {
-            fits = false;
-            break;
-          }
-        }
-
-        if(fits) {
-          /// If it fits, reserve slot across all days
-          for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
-            var day = dailyOffsets.get(d);
-            day.set(slot, true);
-          }
-          break;
-        }
-        slot++;
-      }
-
-      // offset++;
-      element.setAttribute('top', slot*20);
-      //element.setAttribute('flex', '1');
-      element.setAttribute('skip', ''+event.daysFromStart);
-      element.setAttribute('length', ''+event.duration);
-      element.setAttribute('fill', ''+event.daysToEnd);
-      element.setAttribute('value', event.event.summary);
-      var labelElement = document.createElement('description');
-      labelElement.appendChild(document.createTextNode(event.event.summary.trim()));
-      //labelElement.setAttribute('class', 'plain');
-      labelElement.setAttribute('flex', '1');
-      labelElement.style.backgroundColor = event.event.calendar.color;
-      element.appendChild(labelElement);
-
-      var calendarAlldayElement = document.getElementById('calendar-allday');
-      calendarAlldayElement.appendChild(element);
-    });
-  });
+  var calendarAlldayElement = document.getElementById('calendar-allday');
+  displayWeek(alldayevents, calendarAlldayElement);
 }
 
 window.addEventListener("load", function(e) {
