@@ -172,19 +172,23 @@ function createMonthView() {
     var weekNumber = current.weekNumber(WEEKSTART);
 
     let rowElement = document.createElement('row');
-
     rowElement.setAttribute('flex', '1');
+    rowElement.setAttribute('class', 'foobar-class');
+
     let stackElement = document.createElement('stack');
     /// TODO(rh): Do we need these attributes?
     stackElement.setAttribute('flex', '1');
     stackElement.setAttribute('orient', 'vertical');
     stackElement.setAttribute('id', 'week-'+weekNumber);
 
+    let weekEndDate = current.endOfWeek(WEEKSTART);
+    weekEndDate.addDuration(new ICAL.Duration({days: 1}));
+
     // log.debug('weeknumber', weekNumber);
     weeks.set(weekNumber, {
       stack: stackElement,
       start: current.startOfWeek(WEEKSTART),
-      end: current.endOfWeek(WEEKSTART)
+      end: weekEndDate
     });
 
     var day = current.clone();
@@ -331,68 +335,124 @@ function displayWeeks(weekevents) {
   });
 }
 
+function findFreeSlot(slots, dailyOffsets, event) {
+  var slot = 0;
+
+  while(true) {
+    /// By default the event fits into the slot for all days
+    var fits = true;
+    /// Loop over days and check if the slot really fits
+    for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
+      /// Get the map of slots for this day!
+      var day = dailyOffsets.get(d);
+      if(day.has(slot)) {
+        fits = false;
+        break;
+      }
+    }
+
+    if(fits) {
+      /// Check slot, and initilaize if necessary
+      var slotObject = slots.get(slot);
+      if(slotObject === undefined) {
+        /// 0 ... 6 -> 7 days -> null
+        slotObject = [null, null, null, null, null, null, null];
+        slots.set(slot, slotObject);
+      }
+      /// If it fits, reserve slot across all days
+      for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
+        var day = dailyOffsets.get(d);
+        day.set(slot, true);
+        slotObject[d] = event;
+      }
+      //slotObject[event.daysFromStart] = event;
+      //log.debug('slotObject', slotObject);
+      break;
+    }
+    slot++;
+  }
+
+  // return slot;
+}
+
 function displayWeek(durationMap, containerElement) {
-  //log.debug('displayWeek', containerElement);
   var dailyOffsets = new Map();
 
   for(var i=0;i<7;i++) {
     dailyOffsets.set(i, new Map());
   }
 
+  var slots = new Map();
+
   // var offset = 0;
   durationMap.forEach(function(events, duration) {
-    //log.debug('durationMap', [duration, events.length]);
     events.forEach(function(event, _) {
-      var element = document.createElement('alldayevent');
+      //var element = document.createElement('alldayevent');
       /// We have to find a free slot, so the event fits in there!
-      var slot = 0;
-      while(true) {
-        /// By default the event fits into the slot for all days
-        var fits = true;
-        /// Loop over days and check if the slot really fits
-        for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
-          /// Get the map of slots for this day!
-          var day = dailyOffsets.get(d);
-          if(day.has(slot)) {
-            fits = false;
-            break;
-          }
-        }
-
-        if(fits) {
-          /// If it fits, reserve slot across all days
-          for(var d=event.daysFromStart; d<7-event.daysToEnd;d++) {
-            var day = dailyOffsets.get(d);
-            day.set(slot, true);
-          }
-          break;
-        }
-        slot++;
-      }
-
-      // offset++;
-      element.setAttribute('top', 20+slot*20);
-      //element.setAttribute('flex', '1');
-      element.setAttribute('skip', ''+event.daysFromStart);
-      element.setAttribute('length', ''+event.duration);
-      element.setAttribute('fill', ''+event.daysToEnd);
-      element.setAttribute('crop', 'end');
-      element.setAttribute('wrap', 'off');
-
-      element.setAttribute('value', event.event.summary);
-      var labelElement = document.createElement('description');
-      labelElement.appendChild(document.createTextNode(event.event.summary.trim()));
-      //labelElement.setAttribute('class', 'plain');
-      labelElement.setAttribute('flex', '1');
-      labelElement.style.backgroundColor = event.event.calendar.color;
-      labelElement.setAttribute('maxheight', '18');
-      labelElement.setAttribute('crop', 'end');
-      labelElement.setAttribute('wrap', 'off');
-      //labelElement.setAttribute('style', 'cursor: pointer;');
-      element.appendChild(labelElement);
-
-      containerElement.appendChild(element);
+      findFreeSlot(slots, dailyOffsets, event);
     });
+  });
+
+  /// merge slots here
+  slots.forEach(function(obj, slot) {
+    var el = undefined;
+    var newObj = [];
+    while(obj.length > 0) {
+      var x = obj.shift();
+      if(el === undefined) {
+        el = {type: x, length: 0};
+      } else if(el.type !== x) {
+        newObj.push(el);
+        el = {type: x, length: 0};
+      }
+      el.length++;
+    }
+    newObj.push(el);
+
+    /// This is not working.
+    obj.push(...newObj);
+  });
+
+  slots.forEach(function(obj, slot) {
+    var gridElement = document.createElement('grid');
+    gridElement.setAttribute('top', 20+slot*20);
+    gridElement.setAttribute('left', 0);
+    gridElement.setAttribute('right', 0);
+    gridElement.setAttribute('height', 20);
+    var columnsElement = document.createElement('columns');
+    var rowsElement = document.createElement('rows');
+    var rowElement = document.createElement('row');
+    rowElement.setAttribute('equalsize', 'always');
+    rowsElement.appendChild(rowElement);
+    gridElement.appendChild(columnsElement);
+    gridElement.appendChild(rowsElement);
+
+    while(obj.length > 0) {
+      var el = obj.shift();
+      var columnElement = document.createElement('column');
+      columnElement.setAttribute('flex', el.length);
+      columnsElement.appendChild(columnElement);
+      if(el.type === null) {
+        var spacerElement = document.createElement('spacer');
+        rowElement.appendChild(spacerElement);
+      } else {
+        var event = el.type;
+        var boxElement = document.createElement('box'); /// TODO(rh): CSS -> padding
+        boxElement.setAttribute('style', 'padding: 2px;');
+        var descriptionElement = document.createElement('description');
+        descriptionElement.setAttribute('flex', '1');
+        descriptionElement.setAttribute('class', 'plain');
+        descriptionElement.setAttribute('crop', 'center');
+        descriptionElement.setAttribute('tooltiptext', event.event.summary);
+        descriptionElement.setAttribute('value', event.event.summary);
+        descriptionElement.style.backgroundColor = event.event.calendar.color;
+        boxElement.appendChild(descriptionElement);
+        // <description flex="1" class="plain" value="Small" crop="center" tooltiptext="A really really small title" style="cursor: pointer; background-color: yellow;"/>
+        rowElement.appendChild(boxElement);
+      }
+    }
+
+    containerElement.appendChild(gridElement);
   });
 }
 
@@ -408,18 +468,17 @@ function mapEventsByDuration(events, start, end) {
   durationMap.set(1, []);
   durationMap.set(0, []); // possible, if less than 1 day (e.g. non one-day events)
 
-  log.debug('mapEventsByDuration...', [start, end, events.length]);
+  // log.debug('mapEventsByDuration...', [start, end, events.length]);
 
   events.forEach(function(event, index) {
     var [startDate, endDate] = clampDates(event, start, end);
-    //log.debug('clamping', [startDate, endDate]);
 
     var diffDuration = endDate.subtractDate(startDate);
     if(diffDuration.isNegative) {
       log.error("diffDuration: NEGATIVE!", event);
       throw new Error("Expected duration of an event to be positive (e.g. start < end!)");
     }
-    var duration = diffDuration.days+diffDuration.weeks*7;
+    var duration = diffDuration.days + diffDuration.weeks * 7;
     if(duration == 0) {
       /// single-day event
       duration = 1;
