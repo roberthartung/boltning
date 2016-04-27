@@ -139,6 +139,88 @@
             <tabpanel>Day</tabpanel>
           </tabpanels>
         </tabbox>
+
+
+
+        <!--<splitter/>-->
+        <!--
+         EXAMPLE for column placement!
+
+        <vbox>
+
+        <grid>
+          <columns>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+            <column flex="1"/>
+          </columns>
+          <rows>
+            <row equalsize="always">
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+              <box style="padding: 5px;"><spacer style="background-color: red;" height="20" class="plain" flex="1"/></box>
+            </row>
+          </rows>
+        </grid>
+
+          <grid>
+            <columns>
+              <column flex="1"/>
+              <column flex="5"/>
+              <column flex="1"/>
+            </columns>
+            <rows>
+              <row equalsize="always">
+                <spacer/>
+                <box style="padding: 5px;"><description flex="1" class="plain" value="Big Bigger Biggest" crop="center" style="background-color: blue; cursor: pointer;"/></box>
+                <spacer/>
+              </row>
+            </rows>
+          </grid>
+
+          <grid>
+            <columns>
+              <column flex="5"/>
+              <column flex="1"/>
+              <column flex="1"/>
+            </columns>
+            <rows>
+              <row equalsize="always">
+                <spacer />
+                <box style="padding: 5px;"><description flex="1" class="plain" value="Small" crop="center" tooltiptext="A really really small title" style="cursor: pointer; background-color: yellow;"/></box>
+                <spacer/>
+              </row>
+            </rows>
+          </grid>
+
+          <grid>
+            <columns>
+              <column flex="1"/>
+              <column flex="3"/>
+              <column flex="2"/>
+              <column flex="1"/>
+            </columns>
+            <rows>
+              <row equalsize="always">
+                <spacer/>
+                <box style="padding: 5px;"><description value="Big" crop="center" style="background-color: blue; cursor: pointer;" class="plain" flex="1"/></box>
+                <box style="padding: 5px;"><description value="Small" crop="center" style="background-color: yellow; cursor: pointer;" flex="1" class="plain"/></box>
+                <spacer/>
+              </row>
+            </rows>
+          </grid>
+
+        </vbox>
+      -->
+
         <!--       <splitter/>
 
         <colorpicker/>-->
