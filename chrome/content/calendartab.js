@@ -42,7 +42,7 @@ const endOfWeek = now.endOfWeek(WEEKSTART);
 /// ... Thus add 1 day to be on Monday 0:0:0
 endOfWeek.addDuration(new ICAL.Duration({days: 1}));
 
-var calendarTabMonitor = {
+var boltningCalendarTabMonitor = {
   monitorName: "boltning",
   onTabTitleChanged: function() {},
   onTabOpened: function() {},
@@ -55,9 +55,9 @@ var calendarTabMonitor = {
 }
 
 /// Taken from http://mxr.mozilla.org/comm-central/source/mail/base/content/tabmail.xml
-var calendarTabType = {
+var boltningCalendarTabType = {
   name: "boltningcalendar",
-  panelId: "calendarTabPanel",
+  panelId: "boltningCalendarTabPanel",
   modes: {
     boltningcalendar: {
       // only for tabs that should be displayed at startup
@@ -419,7 +419,7 @@ function displayWeek(durationMap, containerElement) {
 
   slots.forEach(function(obj, slot) {
     var gridElement = document.createElement('grid');
-    gridElement.setAttribute('top', 20+slot*20);
+    gridElement.setAttribute('top', 20+slot*(20+4));
     gridElement.setAttribute('left', 0);
     gridElement.setAttribute('right', 0);
     gridElement.setAttribute('height', 20);
@@ -441,7 +441,7 @@ function displayWeek(durationMap, containerElement) {
         rowElement.appendChild(spacerElement);
       } else {
         var event = el.type;
-        var boxElement = document.createElement('box'); /// TODO(rh): CSS -> padding
+        var boxElement = document.createElement('box');
         boxElement.setAttribute('style', 'padding: 2px;');
         var descriptionElement = document.createElement('description');
         descriptionElement.setAttribute('flex', '1');
@@ -615,8 +615,8 @@ function displayCalendars() {
 
 window.addEventListener("load", function(e) {
   let tabmail = document.getElementById('tabmail');
-  tabmail.registerTabType(calendarTabType);
-  tabmail.registerTabMonitor(calendarTabMonitor);
+  tabmail.registerTabType(boltningCalendarTabType);
+  tabmail.registerTabMonitor(boltningCalendarTabMonitor);
   tabmail.openTab("boltningcalendar", {background: true});
 
   var interval;

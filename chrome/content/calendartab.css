@@ -28,7 +28,7 @@ spacer:nth-child(2n), #timeslots-labels vbox:nth-child(2n) {
   border-bottom: 1px solid #f0f0f0;
 }
 
-
+/*
 description {
   background-color: #fff;
 }
@@ -36,6 +36,7 @@ description {
 description:nth-child(3) {
   background-color: red;
 }
+*/
 
 #calendar-columns label, #calendar-columns description {
   cursor: pointer;
@@ -47,9 +48,11 @@ stack grid row box label {
 }
 */
 
+/*
 row box label {
   background-color: #fff;
 }
+*/
 
 /*
 label {
