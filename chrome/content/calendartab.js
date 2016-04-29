@@ -261,6 +261,15 @@ function createCalendarColumn(id, label) {
   outer.appendChild(vboxElement);
 }
 
+var worker = new ChromeWorker("resource://boltning/worker.js");
+worker.onmessage = function(e) {
+  log.debug('Message received from worker', e.data);
+}
+
+worker.onerror = function(e) {
+  log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
+}
+
 function init() {
   //Services.logins.removeAllLogins();
   createCalendarXUL();
@@ -277,6 +286,13 @@ function init() {
       var _promises = [];
       for(var a=0;a<accounts.accounts.length;a++) {
         let account = accounts.accounts[a];
+
+        worker.postMessage({'type': 'login', 'login': {
+          hostname: account.login.hostname,
+          password: account.login.password,
+          username: account.login.username
+        }});
+
         //log.debug('... account', account);
         account.calendars.forEach(function(calendar, path) {
           //log.debug('... calendar', calendar);
@@ -628,15 +644,4 @@ window.addEventListener("load", function(e) {
   }, 100);
 }, false);
 
-/*
-var worker = new Worker("resource://boltning/worker.js");
-log.debug(worker);
-worker.onmessage = function(e) {
-  //result.textContent = e.data;
-  log.debug('Message received from worker', e.data);
-}
-
-worker.onerror = function(e) {
-  log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
-}
-*/
+/// ChromeWorker: https://developer.mozilla.org/en-US/docs/Web/API/ChromeWorker
