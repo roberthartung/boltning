@@ -1,17 +1,24 @@
 /// Utility class for the boltning calendar
 
-var EXPORTED_SYMBOLS = ['DateTimeUtility', 'HttpCaldavRequest'];
+var EXPORTED_SYMBOLS = ['DateTimeUtility', 'HttpCaldavRequest', 'parseColor'];
 
+/*
 Components.utils.import("resource://gre/modules/Log.jsm");
 let log = Log.repository.getLogger("boltning.util");
 log.level = Log.Level.Debug;
 log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
+*/
+
+const regexp_hexcolor_3digit = /^#([A-fa-f0-9]{1})([A-fa-f0-9]{1})([A-fa-f0-9]{1})$/;
+const regexp_hexcolor_6digit = /^#([A-fa-f0-9]{2})([A-fa-f0-9]{2})([A-fa-f0-9]{2})([A-fa-f0-9]{2})?$/;
 
 /// In jsm several DOM classes are not directly available. Import them here:
+/*
 var XMLHttpRequest = Components.Constructor("@mozilla.org/xmlextras/xmlhttprequest;1",
   "nsIXMLHttpRequest");
 var XMLSerializer = Components.Constructor("@mozilla.org/xmlextras/xmlserializer;1",
   "nsIDOMSerializer");
+*/
 
 /*
 var ns = new XMLSerializer();
@@ -118,6 +125,7 @@ var DateTimeUtility = {
  </response>
 */
 
+/*
 function Response(xml) {
   this.error = true;
   this.contentElement = null;
@@ -141,6 +149,46 @@ function Response(xml) {
   // Multiple <propset>
 }
 
+*/
+
+/// response
+///   href
+///   propstat
+///     prop
+///       getetag
+///       calendar-data
+function Response(element) {
+  this.error = true;
+  this.contentElement = null;
+
+  var obj = element.toObject();
+  this.href = obj.href.text;
+
+  for(var propstatElement of element.children('propstat')) {
+    var statusElement = propstatElement.children('status').next().value;
+
+    if(statusElement.text() === 'HTTP/1.1 200 OK') {
+      this.error = false;
+      this.contentElement = propstatElement.children('prop').next().value;
+      break;
+    }
+  }
+
+  /*
+  let propstatElements = xml.querySelectorAll('propstat');
+  for(var p=0; p<propstatElements.length;p++) {
+    var propstatElement = propstatElements[p];
+    var statusElement = propstatElement.querySelector('status');
+    if(statusElement.textContent.trim() == 'HTTP/1.1 200 OK') {
+      this.error = false;
+      this.contentElement = propstatElement.querySelector('prop');
+      break;
+    }
+  }
+  */
+}
+
+/*
 var HttpCaldavRequest = {
   'request': function request(login, method, path, content, depth) {
     depth = depth || '0';
@@ -178,3 +226,62 @@ var HttpCaldavRequest = {
     return this.request(login, 'REPORT', path, content, depth);
   }
 };
+*/
+
+var HttpCaldavRequest = {
+  'request': function request(login, method, path, content, depth) {
+    //postMessage("HttpCaldavRequest.request" + login.hostname + ',' + method + ',' + path);
+    depth = depth || '0';
+    content = content || null;
+    return new Promise(function(resolve, reject) {
+      let xhr = new XMLHttpRequest();
+      xhr.addEventListener('load', function(ev) {
+        postMessage('response received for ' + path);
+        //var parser = new DOMParser();
+        //var doc = parser.parseFromString(xhr.response, "application/xml");
+        var parser = new XMLParser();
+        var xml = parser.parseFromString(xhr.response);
+
+        var responses = [];
+        for(var ms of xml.children('multistatus')) {
+          for(var response of ms.children('response')) {
+            responses.push(new Response(response));
+          }
+        }
+
+        resolve(responses);
+      });
+      xhr.addEventListener('error', function(ev) {
+        reject(new Error('Unknown error for HttpCaldavRequest.request'));
+      });
+      xhr.open(method, login.hostname+path, true, login.username, login.password);
+      /// Headers after open(), but before send()
+      xhr.setRequestHeader('Depth', depth);
+      xhr.setRequestHeader('Prefer', 'return-minimal');
+      if(content) {
+        xhr.setRequestHeader('Content-Type', 'application/xml; charset=utf-8');
+      }
+      xhr.send(content);
+    });
+  },
+  'propfind': function propfind(login, path, content, depth) {
+    return this.request(login, 'PROPFIND', path, content, depth);
+  },
+  'report': function report(login, path, content, depth) {
+    return this.request(login, 'REPORT', path, content, depth);
+  }
+};
+
+function parseColor(txt) {
+  var match = regexp_hexcolor_3digit.exec(txt);
+  if(match != null) {
+    return {r: parseInt(match[1]+match[1], 16), g: parseInt(match[2]+match[2], 16), b: parseInt(match[3]+match[3], 16)};
+  }
+
+  match = regexp_hexcolor_6digit.exec(txt);
+  if(match != null) {
+    return {r: parseInt(match[1], 16), g: parseInt(match[2], 16), b: parseInt(match[3], 16)};
+  }
+
+  throw "Unable to parse color: "+txt;
+}

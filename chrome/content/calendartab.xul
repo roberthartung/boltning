@@ -23,6 +23,7 @@
               </menupopup>
             </toolbarbutton>
             <toolbarbutton label="Accounts" id="calendar-accounts"/>
+            <toolbarbutton label="Synchronize" id="boltning-synchronize"/>
             <toolbarspring flex="1"/>
             <toolbarbutton class="toolbarbutton-1 button-appmenu" label="foo" id="lightning-button-appmenu">
             </toolbarbutton>

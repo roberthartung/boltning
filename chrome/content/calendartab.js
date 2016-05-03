@@ -2,7 +2,8 @@
 // Imports the Services module, that allows us to use Services.<service> to use
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/Log.jsm");
-Components.utils.import("chrome://boltning/content/ical.js");
+//Components.utils.import("chrome://boltning/content/ical.js");
+Components.utils.import("resource://boltningmodules/ical.js");
 Components.utils.import("resource://boltningmodules/accountmanager.jsm");
 Components.utils.import("resource://boltningmodules/util.jsm");
 
@@ -261,6 +262,7 @@ function createCalendarColumn(id, label) {
   outer.appendChild(vboxElement);
 }
 
+/*
 var worker = new ChromeWorker("resource://boltning/worker.js");
 worker.onmessage = function(e) {
   log.debug('Message received from worker', e.data);
@@ -269,55 +271,7 @@ worker.onmessage = function(e) {
 worker.onerror = function(e) {
   log.error("Error in Worker", {message: e.message, filename: e.filename, lineno: e.lineno});
 }
-
-function init() {
-  //Services.logins.removeAllLogins();
-  createCalendarXUL();
-
-  let tree = document.getElementById('calendar-tree-children');
-
-  accounts.ready.then(function() {
-    // log.debug('accounts ready', accounts.accounts.length);
-    if(accounts.accounts.length == 0) {
-      var win = openDialog('chrome://boltning/content/AddAccount.xul');
-      log.debug("AddAccountDialogWindow", win);
-      // reject(new Error("No accounts found!"));
-    } else {
-      var _promises = [];
-      for(var a=0;a<accounts.accounts.length;a++) {
-        let account = accounts.accounts[a];
-
-        worker.postMessage({'type': 'login', 'login': {
-          hostname: account.login.hostname,
-          password: account.login.password,
-          username: account.login.username
-        }});
-
-        //log.debug('... account', account);
-        account.calendars.forEach(function(calendar, path) {
-          //log.debug('... calendar', calendar);
-          let treeitem = document.createElement('treeitem');
-          let treerow = document.createElement('treerow');
-          let treecell = document.createElement('treecell');
-          treecell.setAttribute('label', calendar.displayname);
-          treerow.appendChild(treecell);
-          treeitem.appendChild(treerow);
-          tree.appendChild(treeitem);
-
-          _promises.push(calendar.refresh());
-        });
-      }
-
-      Promise.all(_promises).then(displayCalendars);
-    }
-  });
-
-  /// Setup button-click event for account manager dialog
-  var accountButton = document.getElementById('calendar-accounts');
-  accountButton.addEventListener('click', function(ev) {
-    openDialog('chrome://boltning/content/AccountManagerDialog.xul');
-  });
-}
+*/
 
 function clampDates(event, start, end) {
   var startDate = event.startDate;
@@ -629,12 +583,16 @@ function displayCalendars() {
   displayWeek(alldayevents, calendarAlldayElement);
 }
 
+/// Main entry point. Wait for the document to be loaded
 window.addEventListener("load", function(e) {
+  /// Create tab
   let tabmail = document.getElementById('tabmail');
   tabmail.registerTabType(boltningCalendarTabType);
   tabmail.registerTabMonitor(boltningCalendarTabMonitor);
   tabmail.openTab("boltningcalendar", {background: true});
 
+  /// Wait for the core to be initialized.
+  /// TODO(rh): We should be able to use Service.core.init() here directly?!
   var interval;
   interval = window.setInterval(function() {
     if(Services.core.initialized) {
@@ -643,5 +601,63 @@ window.addEventListener("load", function(e) {
     }
   }, 100);
 }, false);
+
+function init() {
+  //Services.logins.removeAllLogins();
+  createCalendarXUL();
+
+  let synchronizeButton = document.getElementById('boltning-synchronize');
+  synchronizeButton.addEventListener('click', function(e) {
+    /// Force refresh
+    accounts.refresh();
+  });
+
+  let tree = document.getElementById('calendar-tree-children');
+  
+  accounts.ready.then(function() {
+    if(accounts.accounts.length == 0) {
+      var win = openDialog('chrome://boltning/content/AddAccount.xul');
+      log.debug("AddAccountDialogWindow", win);
+      // reject(new Error("No accounts found!"));
+    } else {
+      var _promises = [];
+      for(var a=0;a<accounts.accounts.length;a++) {
+        let account = accounts.accounts[a];
+
+        continue;
+        account.calendars.forEach(function(calendar, path) {
+          let treeitem = document.createElement('treeitem');
+          let treerow = document.createElement('treerow');
+          let treecell = document.createElement('treecell');
+          treecell.setAttribute('label', calendar.displayname);
+          treerow.appendChild(treecell);
+          treeitem.appendChild(treerow);
+          tree.appendChild(treeitem);
+
+          _promises.push(calendar.refresh());
+        });
+      }
+
+      Promise.all(_promises).then(displayCalendars);
+    }
+  });
+
+  /// Setup button-click event for account manager dialog
+  var accountButton = document.getElementById('calendar-accounts');
+  accountButton.addEventListener('click', function(ev) {
+    openDialog('chrome://boltning/content/AccountManagerDialog.xul');
+  });
+}
+
+/*
+var w2 = new SharedWorker('resource://boltning/shared.js', 'account:');
+
+log.debug('w1', w1);
+log.debug('w2', w2);
+
+w2.port.onmessage = function(e) {
+  log.debug('w2.message', e.data);
+}
+*/
 
 /// ChromeWorker: https://developer.mozilla.org/en-US/docs/Web/API/ChromeWorker

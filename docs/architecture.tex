@@ -1,0 +1,22 @@
+\documentclass{standalone}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\begin{document}
+	\begin{tikzpicture}[node distance=0.5]	
+		\node[draw,rectangle,minimum width=2.5cm] (daily) {Daily View};
+		\node[draw,rectangle,minimum width=2.5cm,below=of daily] (weekly) {Weekly View};
+		\node[draw,rectangle,minimum width=2.5cm,below=of weekly] (monthly) {Monthly View};
+		
+		\node[draw,rectangle,left=of weekly] (accountmanager) {accountmanager.jsm};
+		
+		\node[draw,rectangle,left=of accountmanager,align=center] (accountworker) {worker:\\account.js};
+		
+		\draw (accountmanager) -- (accountworker);
+		
+		\draw[<-] (accountmanager.east) -- (weekly.west);
+		\draw[<-] (accountmanager.north east) -- (daily.south west);
+		\draw[<-] (accountmanager.south east) -- (monthly.north west);
+	\end{tikzpicture}
+\end{document}
