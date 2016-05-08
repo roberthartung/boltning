@@ -6,6 +6,7 @@ function Calendar(login, href, xml) {
   this.href = href;
   this.login = login;
 
+  /*
   return;
 
   this.xml = xml;
@@ -18,9 +19,13 @@ function Calendar(login, href, xml) {
     var rgba = parseColor(colorElement.text().trim());
     this.color = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+',0.5)';
   }
+  */
   /// TODO(rh): Random color here or save in properties?
   //this.color =  ? colorElement.textContent : 'cyan';
   //log.debug('Calendar', [this.displayname, this.color]);
+
+  /// Load calendar initially
+  this.init = this.refresh();
 }
 
 Calendar.prototype.refresh = function refresh() {
@@ -36,8 +41,13 @@ Calendar.prototype.refresh = function refresh() {
       var item = new CalendarItem(_this, response.href, vcalendar);
       items.set(response.href, item);
     }
-
     return items;
+  });
+}
+
+Calendar.prototype.query = function query(q) {
+  return new Promise((resolve, reject) => {
+    resolve([this.items.size]);
   });
 }
 

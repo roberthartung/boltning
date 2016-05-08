@@ -474,6 +474,8 @@ function mapEventsByDuration(events, start, end) {
 }
 
 function displayCalendars() {
+  log.debug('displayCalendars()');
+
   var columns = document.getElementById('calendar-columns');
   // document.querySelectorAll('#calendar-columns .calendar-column');
   columns = columns.querySelectorAll('.calendar-column');
@@ -602,6 +604,15 @@ window.addEventListener("load", function(e) {
   }, 100);
 }, false);
 
+/// called after calendars are loaded initially.
+function refreshCalendars() {
+  log.debug('refreshCalendars()');
+  accounts.query({from: startOfWeek, to: endOfWeek}).then((result) => {
+    log.debug('refreshCalendars.result', result);
+  });
+  // .then(displayCalendars)
+}
+
 function init() {
   //Services.logins.removeAllLogins();
   createCalendarXUL();
@@ -613,7 +624,7 @@ function init() {
   });
 
   let tree = document.getElementById('calendar-tree-children');
-  
+
   accounts.ready.then(function() {
     if(accounts.accounts.length == 0) {
       var win = openDialog('chrome://boltning/content/AddAccount.xul');
@@ -621,10 +632,13 @@ function init() {
       // reject(new Error("No accounts found!"));
     } else {
       var _promises = [];
+
       for(var a=0;a<accounts.accounts.length;a++) {
         let account = accounts.accounts[a];
+        _promises.push(account.ready);
 
         continue;
+        /*
         account.calendars.forEach(function(calendar, path) {
           let treeitem = document.createElement('treeitem');
           let treerow = document.createElement('treerow');
@@ -636,9 +650,10 @@ function init() {
 
           _promises.push(calendar.refresh());
         });
+        */
       }
 
-      Promise.all(_promises).then(displayCalendars);
+      Promise.all(_promises).then(refreshCalendars);
     }
   });
 

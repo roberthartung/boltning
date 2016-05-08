@@ -4,15 +4,39 @@ importScripts('resource://boltningmodules/xmlparser.js');
 importScripts('resource://boltningmodules/util.jsm');
 //importScripts('resource://boltningmodules/calendar.js');
 
-function CalendarWorkerWrapper(account, href, contents) {
+/// Constructor/Base of CalendarShadow
+/// Initially
+function CalendarShadow(account, href, xml) {
+  this.xml = xml;
+
+  this.displayname = xml.children('displayname').next().value.text();
+  var colorElement = xml.children('calendar-color').next().value;
+  this.color = 'cyan';
+  if(colorElement != null) {
+    var rgba = parseColor(colorElement.text().trim());
+    this.color = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+',0.5)';
+  }
+
   this.worker = new Worker('resource://workers/calendar.js');
-  this.worker.postMessage({type: 'init', href: href, login: account.login});
+
+  /// Initializes
+  this.ready = new Promise((resolve, reject) => {
+    this.worker.postMessage({type: 'init', href: href, login: account.login});
+    this.initResolve = resolve;
+    this.initReject = reject;
+  });
+
   this.worker.addEventListener('message', (e) => {
     let data = e.data;
     switch(data.type) {
-      case 'ready' :
-        //_this.worker.removeEventListener('message', onMessage);
+      case 'refresh.done' :
         this.refreshResolve();
+      break;
+      case 'init.done' :
+        this.initResolve();
+      break;
+      case 'query.done' :
+        this.queryResolve(data.result);
       break;
       default :
         postMessage(data);
@@ -21,24 +45,20 @@ function CalendarWorkerWrapper(account, href, contents) {
   });
 }
 
-CalendarWorkerWrapper.prototype.refresh = function refresh() {
+/// Refreshes the calendar's items!
+CalendarShadow.prototype.refresh = function refresh() {
   return new Promise((resolve, reject) => {
     this.worker.postMessage({type: 'refresh'});
     this.refreshResolve = resolve;
     this.refreshReject = resolve;
-    /*
-    var _this = this;
-    function onMessage(e) {
-      let data = e.data;
-      switch(data.type) {
-        case 'ready' :
-          _this.worker.removeEventListener('message', onMessage);
-          resolve();
-        break;
-      }
-    }
-    this.worker.addEventListener('message', onMessage);
-    */
+  });
+}
+
+CalendarShadow.prototype.query = function query(q) {
+  return new Promise((resolve, reject) => {
+    this.worker.postMessage(q);
+    this.queryResolve = resolve;
+    this.queryReject = resolve;
   });
 }
 
@@ -60,7 +80,7 @@ function Account(login) {
             var calendarElement = resourcetypeElement.children('calendar').next().value;
             /// This is a calendar
             if(calendarElement != null) {
-              var calendar = new CalendarWorkerWrapper(_this, response.href, response.contentElement);
+              var calendar = new CalendarShadow(_this, response.href, response.contentElement);
               calendars.set(response.href, calendar);
             }
           } else {

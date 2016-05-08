@@ -14,11 +14,19 @@ onmessage = function(e) {
       // data.href
       // data.login
       calendar = new Calendar(data.login, data.href);
+      calendar.init.then(() => {
+        postMessage({type: 'init.done'});
+      });
     break;
     case 'refresh' :
-      postMessage('CalendarWorker.refresh');
+      // postMessage('CalendarWorker.refresh');
       calendar.refresh().then(() => {
-        postMessage({type: 'ready'});
+        postMessage({type: 'refresh.done'});
+      });
+    break;
+    case 'query' :
+      calendar.query(data.query).then((result) => {
+        postMessage({type: 'query.done', result: result});
       });
     break;
   }
