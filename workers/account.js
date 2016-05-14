@@ -26,10 +26,24 @@ onmessage = function(e) {
         return Promise.all(promises);
       }).then(() => {
         postMessage('All calendars loaded...');
-        postMessage({type: 'init.done'});
+        var calendars = {};
+        account.calendars.forEach((calendar) => {
+          calendars[calendar.href] = {displayname: calendar.displayname, color: calendar.color};
+        });
+        postMessage({type: 'init.done', calendars: calendars});
       });
 
       /// Create Account, query calendars
+    break;
+    case 'synchronize' :
+      var promises = [];
+      account.calendars.forEach((calendar) => {
+        promises.push(calendar.synchronize());
+      });
+
+      Promise.all(promises).then(() => {
+        postMessage({type: 'synchronize.done'});
+      });
     break;
     case 'query' :
       /// Collect data from all calendars here!

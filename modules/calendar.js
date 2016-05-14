@@ -5,6 +5,7 @@ importScripts('resource://boltningmodules/ical.js');
 function Calendar(login, href, xml) {
   this.href = href;
   this.login = login;
+  this.items = new Map();
 
   /*
   return;
@@ -25,20 +26,19 @@ function Calendar(login, href, xml) {
   //log.debug('Calendar', [this.displayname, this.color]);
 
   /// Load calendar initially
-  this.init = this.refresh();
+  this.init = this.synchronize();
 }
 
-Calendar.prototype.refresh = function refresh() {
-  var items = new Map();
-  this.items = items;
-  var _this = this;
+Calendar.prototype.synchronize = function synchronize() {
+  var items = this.items;
+  /// TODO(rh): Check items / Use tokens before!
 
-  return HttpCaldavRequest.report(this.login, this.href, '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>', '1').then(function(responses) {
+  return HttpCaldavRequest.report(this.login, this.href, '<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag /><c:calendar-data /></d:prop><c:filter><c:comp-filter name="VCALENDAR" /></c:filter></c:calendar-query>', '1').then((responses) => {
     for(var i=0;i<responses.length;i++) {
       let response = responses[i];
       var jcalData = ICAL.parse(response.contentElement.children('calendar-data').next().value.text().trim());
       var vcalendar = new ICAL.Component(jcalData);
-      var item = new CalendarItem(_this, response.href, vcalendar);
+      var item = new CalendarItem(this, response.href, vcalendar);
       items.set(response.href, item);
     }
     return items;
@@ -47,7 +47,21 @@ Calendar.prototype.refresh = function refresh() {
 
 Calendar.prototype.query = function query(q) {
   return new Promise((resolve, reject) => {
-    resolve([this.items.size]);
+    let fromDate = new ICAL.Time(q.from);
+    let toDate = new ICAL.Time(q.to);
+
+    var result = {};
+
+    this.items.forEach((item, _) => {
+      /// 2.) check for current week
+      let _events = item.checkRelevanceForRange(fromDate, toDate);
+      if(_events) {
+        result[item.path] = {summary: _events[0].summary, startDate: _events[0].startDate.toJSON(), endDate: _events[0].endDate.toJSON()};
+        // events.push(_events[0].summary);
+      }
+    });
+
+    resolve(result);
   });
 }
 
@@ -88,7 +102,7 @@ function CalendarItem(calendar, path, vcalendar) {
     }
 
   } else {
-    log.error("No events for item!", vcalendar);
+    //log.error("No events for item!", vcalendar);
   }
 }
 
@@ -124,7 +138,7 @@ CalendarItem.prototype.checkRelevanceForRange = function(start, end) {
       }
     }
   } else {
-    log.error('CalendarItem with more than 1 event. Ignoring.');
+    //log.error('CalendarItem with more than 1 event. Ignoring.');
   }
 
   return events.length == 0 ? false : events;

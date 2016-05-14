@@ -12,9 +12,7 @@ Components.utils.import("resource://gre/modules/Timer.jsm");
 Components.utils.import("resource://boltningmodules/util.jsm");
 
 //Components.utils.import("chrome://boltning/content/ical.js");
-
 //Components.utils.import("resource://gre/modules/PromiseWorker.jsm");
-
 //importScripts("resource://gre/modules/workers/require.js");
 //let PromiseWorker = require("resource://gre/modules/PromiseWorker.jsm");
 
@@ -46,12 +44,18 @@ function AccountShadow(login) {
     switch(data.type) {
       /// Ready will be received, when initial sync is complete!
       case 'init.done' :
+        /// ...
         log.debug('accountWorker -> init.done');
+        this.calendars = calendars;
         this.readyResolve();
       break;
       case 'query.done' :
         log.debug('accountWorker -> query.done');
         this.queryResolve(data.result);
+      break;
+      case 'synchronize.done' :
+        log.debug('accountWorker -> synchronize.done');
+        this.synchronizeResolve();
       break;
       default :
         log.debug('message from worker', e.data);
@@ -62,6 +66,17 @@ function AccountShadow(login) {
   this.ready = new Promise((resolve, reject) => {
     this.readyResolve = resolve;
     this.readyReject = reject;
+  });
+}
+
+AccountShadow.prototype.synchronize = function synchronize() {
+  return new Promise((resolve, reject) => {
+    this.accountWorker.postMessage({
+      type: 'synchronize'
+    });
+
+    this.synchronizeResolve = resolve;
+    this.synchronizeReject = reject;
   });
 }
 
@@ -115,6 +130,16 @@ function AccountManager() {
   this.ready = Promise.all(_promises);
 
   setup();
+}
+
+AccountManager.prototype.synchronize = function synchronize() {
+  var promises = [];
+
+  this.accounts.forEach((account) => {
+    promises.push(account.synchronize());
+  });
+
+  return Promise.all(promises);
 }
 
 AccountManager.prototype.query = function query(q) {

@@ -18,10 +18,10 @@ onmessage = function(e) {
         postMessage({type: 'init.done'});
       });
     break;
-    case 'refresh' :
+    case 'synchronize' :
       // postMessage('CalendarWorker.refresh');
-      calendar.refresh().then(() => {
-        postMessage({type: 'refresh.done'});
+      calendar.synchronize().then(() => {
+        postMessage({type: 'synchronize.done'});
       });
     break;
     case 'query' :

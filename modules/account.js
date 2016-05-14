@@ -8,6 +8,7 @@ importScripts('resource://boltningmodules/util.jsm');
 /// Initially
 function CalendarShadow(account, href, xml) {
   this.xml = xml;
+  this.href = href;
 
   this.displayname = xml.children('displayname').next().value.text();
   var colorElement = xml.children('calendar-color').next().value;
@@ -29,8 +30,8 @@ function CalendarShadow(account, href, xml) {
   this.worker.addEventListener('message', (e) => {
     let data = e.data;
     switch(data.type) {
-      case 'refresh.done' :
-        this.refreshResolve();
+      case 'synchronize.done' :
+        this.synchronizeResolve();
       break;
       case 'init.done' :
         this.initResolve();
@@ -46,11 +47,12 @@ function CalendarShadow(account, href, xml) {
 }
 
 /// Refreshes the calendar's items!
-CalendarShadow.prototype.refresh = function refresh() {
+/// WAS refresh()
+CalendarShadow.prototype.synchronize = function synchronize() {
   return new Promise((resolve, reject) => {
-    this.worker.postMessage({type: 'refresh'});
-    this.refreshResolve = resolve;
-    this.refreshReject = resolve;
+    this.worker.postMessage({type: 'synchronize'});
+    this.synchronizeResolve = resolve;
+    this.synchronizeReject = resolve;
   });
 }
 

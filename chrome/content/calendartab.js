@@ -607,9 +607,96 @@ window.addEventListener("load", function(e) {
 /// called after calendars are loaded initially.
 function refreshCalendars() {
   log.debug('refreshCalendars()');
-  accounts.query({from: startOfWeek, to: endOfWeek}).then((result) => {
-    log.debug('refreshCalendars.result', result);
+
+  accounts.query({from: startOfWeek.toJSON(), to: endOfWeek.toJSON()}).then((result) => {
+    //log.debug('refreshCalendars.result', result);
+
+    var events = [];
+    result.forEach((calendars, _) => {
+      calendars.forEach((items, _) => {
+        //log.debug('items', items);
+        for(var path in items) {
+          var item = items[path];
+          /// unserialize
+          item.startDate = new ICAL.Time(item.startDate);
+          item.endDate = new ICAL.Time(item.endDate);
+          events.push(item);
+        }
+      });
+    });
+
+    return events;
+  }).then((events) => {
+    var columns = document.getElementById('calendar-columns').querySelectorAll('.calendar-column');
+
+    for(var c=0;c<columns.length;c++) {
+      var column = columns[c];
+      while(column.hasChildNodes()) {
+        column.removeChild(column.firstChild);
+      }
+    }
+
+    var alldayevents = new Map();
+
+    /// Durations from 1 to 7 days
+    alldayevents.set(7, []);
+    alldayevents.set(6, []);
+    alldayevents.set(5, []);
+    alldayevents.set(4, []);
+    alldayevents.set(3, []);
+    alldayevents.set(2, []);
+    alldayevents.set(1, []);
+
+    events.forEach((event, _) => {
+      if(event.startDate.isDate && event.endDate.isDate) {
+        var [startDate, endDate] = clampDates(event, startOfWeek, endOfWeek);
+
+        var diffDuration = endDate.subtractDate(startDate);
+        if(diffDuration.isNegative) {
+          log.error("diffDuration: NEGATIVE!", event);
+          throw "Expected duration of an event to be positive (e.g. start < end!)";
+        }
+        var duration = diffDuration.days+diffDuration.weeks*7;
+
+        var diffStart = startDate.subtractDate(startOfWeek);
+        var daysFromStart = diffStart.days;
+        var daysToEnd = 7 - daysFromStart - duration;
+
+        alldayevents.get(duration).push({
+          daysFromStart: daysFromStart,
+          daysToEnd: daysToEnd,
+          duration: duration,
+          event: event/*,
+          calendar: calendar*/
+        });
+      } else if(!event.startDate.isDate && !event.endDate.isDate) {
+        /// Step 1: Find correct column!
+        var diffToStartOfWeek = event.startDate.subtractDate(startOfWeek);
+        var diffStartDays = diffToStartOfWeek.days + diffToStartOfWeek.weeks * 7;
+        var diffEvent = event.endDate.subtractDate(event.startDate);
+
+        //log.debug('event', [item.event.summary, diffStartDays]);
+
+        //let stackElement = document.createElement('stack');
+        //stackElement.setAttribute('flex', '1');
+
+        let xe = document.createElement('description');
+        xe.appendChild(document.createTextNode(event.summary));
+        xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100+diffToStartOfWeek.minutes/60.0*100.0));
+        xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
+        xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
+        //xe.style.backgroundColor = calendar.color;
+        //stackElement.appendChild(xe);
+
+        //columns[diffStartDays].appendChild(stackElement);
+        columns[diffStartDays].appendChild(xe);
+        // dayColumnElement.appendChild(stackElement);
+      } else {
+        throw "One of startDate / endDate is a date, but the other one is a time!";
+      }
+    });
   });
+
   // .then(displayCalendars)
 }
 
@@ -619,8 +706,25 @@ function init() {
 
   let synchronizeButton = document.getElementById('boltning-synchronize');
   synchronizeButton.addEventListener('click', function(e) {
+    if(synchronizeButton.disabled) {
+      return;
+    }
+
+    var columns = document.getElementById('calendar-columns').querySelectorAll('.calendar-column');
+
+    for(var c=0;c<columns.length;c++) {
+      var column = columns[c];
+      while(column.hasChildNodes()) {
+        column.removeChild(column.firstChild);
+      }
+    }
+
     /// Force refresh
-    accounts.refresh();
+    synchronizeButton.disabled = true;
+    accounts.synchronize().then(() => {
+      synchronizeButton.disabled = false;
+      refreshCalendars();
+    });
   });
 
   let tree = document.getElementById('calendar-tree-children');
