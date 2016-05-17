@@ -1,0 +1,60 @@
+\documentclass[landscape]{standalone}
+
+\usepackage{tikz}
+\usepackage{pgf-umlsd}
+\usepgflibrary{arrows} % for pgf-umlsd
+\usepackage{verbatim}
+
+\begin{document}
+		\centering
+		\begin{sequencediagram}
+			\newthread{calendartab}{Calendar}{}
+			\newinst{accountmanager}{AccountManager}{}
+			\newinst{accountshadow}{AccountShadow}{}
+			\newinst[1]{accountworker}{AccountWorker}{}
+			\newinst{account}{Account}{}
+			\newinst{calendarshadow}{CalendarShadow}{}
+			\newinst[1]{calendarworker}{CalendarWorker}{}
+			\newinst{calendar}{Calendar}{}
+			
+			%\begin{sdblock}{Main Thread}{}
+				\begin{messcall}{accountmanager}{new}{accountshadow}{}
+					\begin{messcall}{accountshadow}{\{init\}}{accountworker}{}
+						\begin{call}{accountworker}{new}{account}{ready}
+							\begin{callself}{account}{principal}{}
+							\end{callself}
+							\begin{callself}{account}{calendars}{}
+								\begin{messcall}{account}{new}{calendarshadow}{}
+									\begin{messcall}{calendarshadow}{\{init\}}{calendarworker}{}
+										\begin{messcall}{calendarworker}{new}{calendar}{}
+										\end{messcall}
+										%\begin{call}{calendarworker}{refresh}{calendar}{Promise}
+										
+										%\end{call}
+									\end{messcall}
+								\end{messcall}
+							\end{callself}
+						\end{call}
+						% After ready: Call refresh
+						\begin{call}{accountworker}{refresh()}{account}{Promise}
+							\begin{messcall}{account}{refresh()}{calendarshadow}{}
+								\begin{messcall}{calendarshadow}{\{refresh\}}{calendarworker}{}
+									\begin{call}{calendarworker}{refresh()}{calendar}{Promise}
+										\begin{sdblock}{Loop}{}
+											\begin{callself}{calendar}{new Item()}{}
+											\end{callself}
+										\end{sdblock}
+									\end{call}
+								\end{messcall}
+							\end{messcall}
+						\end{call}
+					\end{messcall}
+				\end{messcall}
+			%\end{sdblock}
+			
+			
+		\end{sequencediagram}
+		
+%		\begin{callself}{calendartab}{loop}{}
+%		\end{callself}
+\end{document}
