@@ -561,6 +561,7 @@ function displayCalendars() {
           xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
           // xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
           xe.style.backgroundColor = calendar.color;
+
           //stackElement.appendChild(xe);
 
           //columns[diffStartDays].appendChild(stackElement);
@@ -685,6 +686,14 @@ function refreshCalendars() {
         xe.setAttribute('top', ''+(diffToStartOfWeek.hours*100+diffToStartOfWeek.minutes/60.0*100.0));
         xe.setAttribute('height', ''+(diffEvent.hours*100.0+diffEvent.minutes/60.0*100.0));
         xe.style.backgroundColor = 'rgba(255, 0, 0, 0.25)';
+
+        xe.onclick = (ev) => {
+          log.debug('Event clicked');
+          let panel = document.getElementById('boltning-event-details');
+          panel.hidePopup();
+          panel.openPopup(xe, 'after_start', 0, 0, false, false, ev);
+        }
+
         //xe.style.backgroundColor = calendar.color;
         //stackElement.appendChild(xe);
 

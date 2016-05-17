@@ -14,6 +14,8 @@
 
   <tabpanels id="tabpanelcontainer">
     <vbox id="boltningCalendarTabPanel" flex="1">
+      <panel id="boltning-event-details" flip="both" level="parent">This is a panel...</panel>
+
       <!--<modevbox id="calendar-toolbox-container" mode="calendar">-->
         <toolbox class="mail-toolbox" mode="full" defaultmode="full" labelalign="end" defaultlabelalign="end">
           <toolbar class="inline-toolbar chromeclass-toolbar" mode="full" fullscreentoolbar="true">
