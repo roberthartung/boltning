@@ -46,7 +46,7 @@ function AccountShadow(login) {
       case 'init.done' :
         /// ...
         log.debug('accountWorker -> init.done');
-        this.calendars = calendars;
+        this.calendars = data.calendars;
         this.readyResolve();
       break;
       case 'query.done' :
